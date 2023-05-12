@@ -1,10 +1,22 @@
-import React from 'react';
-import ReactDOM from 'react-dom';
+import React, { useState, useEffect } from "react";
+import { parseRSSURL } from "./services/rss-parser";
 
-const App = () => (
-  <div>
-    <h1>Hello, NeutralinoJS!</h1>
-  </div>
-);
+function App() {
+  const [itemTitle, setItemTitle] = useState("");
 
-ReactDOM.render(<App />, document.getElementById('root'));
+  useEffect(() => {
+    (async () => {
+      const rssJSON = await parseRSSURL("https://www.reddit.com/.rss");
+      const title = rssJSON.feed.entry[4].title;
+      setItemTitle(title);
+    })();
+  }, []);
+
+  return (
+    <div>
+      <h1>{itemTitle}</h1>
+    </div>
+  );
+}
+
+export default App;
