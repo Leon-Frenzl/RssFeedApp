@@ -16,7 +16,7 @@
       "width": 800,
       "height": 500,
       "minWidth": 400,
-      "minHeight": 200,
+      "minHeight": 200, 
       "icon": "/react-src/public/logo192.png"
     }
   },
