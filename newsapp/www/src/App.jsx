@@ -1,9 +1,13 @@
 import { useState } from 'react'
-import logo from './logo.svg'
 import './App.css'
 
 function App() {
-  const [count, setCount] = useState(0)
+
+  fetch('http://localhost:9000/rss?feedUrl=https://www.youtube.com/feeds/videos.xml?channel_id=UCd4wVg3jzdaYtOkHI38EQ0w')
+  .then(response => response.json())
+  .then(feed => {
+    console.log(feed);
+  });
 
   return (
     <div className="App">
