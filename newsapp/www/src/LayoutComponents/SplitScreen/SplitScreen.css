@@ -1,0 +1,11 @@
+.Pane1{
+    flex: 1;
+}
+
+.Pane2{
+    flex: 5;
+}
+
+.Container{
+    display: flex;
+}
