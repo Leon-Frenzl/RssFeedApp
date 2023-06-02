@@ -1,0 +1,10 @@
+app/.prettierrc.yaml
+app/.prettierignore
+app/.eslintrc.cjs
+app/.eslintignore
+app/.editorconfig
+
+node_modules
+dist
+out
+*.log*
