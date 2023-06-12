@@ -5,11 +5,10 @@ import { parseRssFeeds_LastItem } from './rssParser';
 import NodeCach from 'node-cache';
 import fs from 'fs';
 
-const rssCache = new NodeCach({stdTTL: 600});
+const rssCache = new NodeCach({ stdTTL: 600 });
 const rssFeedUrlsFile = join(app.getPath('userData'), 'rssFeedUrls.json');
 const exampleFeedUrlsFile = join(app.getAppPath(), 'resources', 'exampleFeedUrls.json');
 
-// File Storage Funktionen für die User und Beispiel Feeds
 function loadRssFeeds(file) {
   try {
     if (!fs.existsSync(file)) {
@@ -18,22 +17,21 @@ function loadRssFeeds(file) {
     const data = fs.readFileSync(file, 'utf-8');
     return JSON.parse(data) || [];
   } catch (error) {
-    console.error("Error loading RssFeeds:" + error);
+    console.error(`Error loading RssFeeds from ${file}: ${error}`);
     return [];
   }
 }
 
-function saveRssFeedUrl(file){
-  try{
-    fs.writeFileSync(file, JSON.stringify(rssFeedUrls), 'utf-8');
-  }catch (error){
-    console.error('Error Saving Rss Feed: ' + error);
+function saveRssFeedUrls(file, urls) {
+  try {
+    fs.writeFileSync(file, JSON.stringify(urls), 'utf-8');
+  } catch (error) {
+    console.error(`Error saving RssFeedUrls to ${file}: ${error}`);
   }
 }
 
 let rssFeedUrls = loadRssFeeds(rssFeedUrlsFile);
-let rssFeeds = [];
-const exampleFeedUrls = loadRssFeeds(exampleFeedUrlsFile);
+let exampleFeedUrls = loadRssFeeds(exampleFeedUrlsFile);
 
 function createWindow() {
   const mainWindow = new BrowserWindow({
@@ -71,7 +69,7 @@ app.whenReady().then(() => {
 
   createWindow();
 
-  app.on('activate', function () {
+  app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
 });
@@ -82,60 +80,65 @@ app.on('window-all-closed', () => {
   }
 });
 
-ipcMain.handle('get-app-dirname', (event) => {
-  return __dirname;
-});
+ipcMain.handle('get-app-dirname', () => __dirname);
 
-// API Endpunkte für Rss Feeds des Users
 ipcMain.on('read-rssFeeds', async (event) => {
-  try{
+  try {
     const parsedFeeds = await parseRssFeeds_LastItem(rssFeedUrls);
-    event.sender.send('response-rssFeeds', parsedFeeds)
-  }catch (error){
-    event.reply('response-example-feeds', {error: error.message})
+    event.sender.send('response-rssFeeds', parsedFeeds);
+  } catch (error) {
+    event.reply('response-example-feeds', { error: error.message });
   }
 });
 
-
 ipcMain.on('add-rssFeed', (event, rssFeedUrl, rssFeedTopic) => {
-  const newRssFeed = { id: rssFeeds.length + 1, url: rssFeedUrl, topic: rssFeedTopic};
+  const newRssFeed = { id: rssFeeds.length + 1, url: rssFeedUrl, topic: rssFeedTopic };
   const cachedFeeds = rssCache.get('feeds');
-  if (cachedFeeds){
+  if (cachedFeeds) {
     cachedFeeds.push(newRssFeed);
     rssCache.set('feeds', cachedFeeds);
   }
 
-  event.reply('rssFeed-added', newRssFeed)
+  event.reply('rssFeed-added', newRssFeed);
 });
 
 ipcMain.on('delete-rss-feed', (event, rssFeedId) => {
-  rssFeeds = rssFeeds.filter((feed) => feed.id !== rssFeedId);
+  rssFeedUrls = rssFeedUrls.filter((feed) => feed.id !== rssFeedId);
   event.reply('rss-feed-deleted', rssFeedId);
 });
 
 ipcMain.on('update-rss-feed', (event, updatedRssFeed) => {
-  const index = rssFeeds.findIndex((feed) => feed.id === updatedRssFeed.id);
+  const index = rssFeedUrls.findIndex((feed) => feed.id === updatedRssFeed.id);
   if (index !== -1) {
-    rssFeeds[index] = updatedRssFeed;
+    rssFeedUrls[index] = updatedRssFeed;
     event.reply('rss-feed-updated', updatedRssFeed);
   }
 });
 
-ipcMain.on('subscribe-to-example-feed', (event, rssFeedUrl, description, topic) => {
+ipcMain.on('subscribe-to-feed', (event, rssFeedUrl, description, topic) => {
   try {
-    const existingFeed = rssFeedUrls.find(feed => feed.url === rssFeedUrl);
+    const existingFeedIndex = exampleFeedUrls.findIndex((feed) => feed.url === rssFeedUrl);
 
-    if (existingFeed) {
+    if (existingFeedIndex !== -1) {
+      exampleFeedUrls[existingFeedIndex].subscribed = true;
+      saveRssFeedUrls(exampleFeedUrlsFile, exampleFeedUrls);
+    }
+
+    const existingUserFeed = rssFeedUrls.find((feed) => feed.url === rssFeedUrl);
+
+    if (existingUserFeed) {
       event.reply('feed-subscribed', { error: 'Feed URL already exists' });
     } else {
-      const newFeedUrl = {
-        id: rssFeedUrls.length +1,
+      const newUserFeed = {
+        id: rssFeedUrls.length + 1,
         url: rssFeedUrl,
         description: description,
-        topic: topic
+        topic: topic,
+        subscribed: true,
       };
-      rssFeedUrls.push(newFeedUrl);
-      saveRssFeedUrl(rssFeedUrlsFile);
+      rssFeedUrls.push(newUserFeed);
+      saveRssFeedUrls(rssFeedUrlsFile, rssFeedUrls);
+
       event.reply('feed-subscribed');
     }
   } catch (error) {
@@ -144,31 +147,57 @@ ipcMain.on('subscribe-to-example-feed', (event, rssFeedUrl, description, topic) 
   }
 });
 
-// API Endpunkte für Beispiel Feeds
+ipcMain.on('unsubscribe-from-feed', (event, rssFeedUrl) => {
+  try {
+    const userFeedIndex = rssFeedUrls.findIndex((feed) => feed.url === rssFeedUrl);
+    if (userFeedIndex !== -1) {
+      rssFeedUrls.splice(userFeedIndex, 1);
+      saveRssFeedUrls(rssFeedUrlsFile, rssFeedUrls);
+    }
+
+    const exampleFeedIndex = exampleFeedUrls.findIndex((feed) => feed.url === rssFeedUrl);
+    if (exampleFeedIndex !== -1) {
+      exampleFeedUrls[exampleFeedIndex].subscribed = false;
+      saveRssFeedUrls(exampleFeedUrlsFile, exampleFeedUrls);
+    }
+
+    event.reply('feed-unsubscribed', { success: true });
+  } catch (error) {
+    console.error('Error unsubscribing from the feed:', error);
+    event.reply('feed-unsubscribed', { success: false, error: error.message });
+  }
+});
+
+
 ipcMain.on('read-example-feeds', async (event) => {
-  try{
+  try {
     const parsedFeeds = await parseRssFeeds_LastItem(exampleFeedUrls);
-    event.sender.send('response-example-feeds', parsedFeeds)
+    event.sender.send('response-example-feeds', parsedFeeds);
+  } catch (error) {
+    event.reply('response-example-feeds', { error: error.message });
   }
-  catch(error){
-    event.reply('response-example-feeds', {error: error.message})
-  }
-  
-})
+});
 
-
-//Updating RssFeeds, dass sie Aktuell sind
-function updateRssFeeds(){
-   fetchRssFeeds().then((feeds) => {rssCache.set('feeds', feeds)})
+function updateRssFeeds() {
+  fetchRssFeeds().then((feeds) => {
+    rssCache.set('feeds', feeds);
+  });
 }
 
-setInterval(updateRssFeeds, 60*60*1000);
+setInterval(updateRssFeeds, 60 * 60 * 1000);
 
-// Api Endpunkte für Gruppen
-ipcMain.on('create-group', (event, createGroup) => {event.reply('response-create-groups', "Not Implemented")})
+ipcMain.on('create-group', (event, createGroup) => {
+  event.reply('response-create-groups', 'Not Implemented');
+});
 
-ipcMain.on('read-groups', (event) => {event.reply('response-read-groups', "Not Implemented")})
+ipcMain.on('read-groups', (event) => {
+  event.reply('response-read-groups', 'Not Implemented');
+});
 
-ipcMain.on('update-groups', (event) => {event.reply('response-update-groups', "Not Implemented")})
+ipcMain.on('update-groups', (event) => {
+  event.reply('response-update-groups', 'Not Implemented');
+});
 
-ipcMain.on('delet-groups', (event) => {event.reply('response-delet-groups', "Not Implemented")})
+ipcMain.on('delete-groups', (event) => {
+  event.reply('response-delet-groups', 'Not Implemented');
+});

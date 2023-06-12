@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Card, Button } from 'antd';
 
-function ExampleFeedCard({ id, image, title, author, description, rssFeedUrl, topic, subscribed }) {
+function ExampleFeedCard({ id, image, title, author, description, rssFeedUrl, topic, subscribed, onSubscribe, onUnsubscribe }) {
   const [expanded, setExpanded] = useState(false);
+
   const toggleExpand = () => {
     setExpanded(!expanded);
   };
@@ -23,6 +24,14 @@ function ExampleFeedCard({ id, image, title, author, description, rssFeedUrl, to
     return description;
   };
 
+  const handleSubscribe = () => {
+    if (subscribed) {
+      onUnsubscribe(rssFeedUrl);
+    } else {
+      onSubscribe(rssFeedUrl); 
+    }
+  };
+
   return (
     <Card hoverable cover={<img alt="Feed" src={image} />} style={{ height: '100%' }}>
       <Card.Meta title={title} description={author} />
@@ -32,7 +41,11 @@ function ExampleFeedCard({ id, image, title, author, description, rssFeedUrl, to
           {expanded ? 'Read Less' : 'Read More'}
         </Button>
       )}
-      {!subscribed && (
+      {subscribed ? (
+        <Button type="primary" onClick={handleSubscribe}>
+          Unsubscribe
+        </Button>
+      ) : (
         <Button type="primary" onClick={handleSubscribe}>
           Subscribe
         </Button>

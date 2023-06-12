@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Row, Col, Divider } from 'antd';
+import { Row, Col, Divider, Modal } from 'antd';
 import FeedCard from './ExampleFeedCard';
 
 function ExampleFeedsPage() {
   const [exampleFeeds, setExampleFeeds] = useState([]);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalTitle, setModalTitle] = useState('');
+  const [modalContent, setModalContent] = useState('');
 
   useEffect(() => {
     const ipcRenderer = window.electron.ipcRenderer;
@@ -13,10 +16,26 @@ function ExampleFeedsPage() {
     };
 
     ipcRenderer.on('response-example-feeds', (event, parsedFeeds) => {
-      if (Array.isArray(parsedFeeds)) {
-        setExampleFeeds(parsedFeeds);
+      if (parsedFeeds.error) {
+        showModal('Error', parsedFeeds.error);
       } else {
-        setExampleFeeds([]); // or handle the error condition appropriately
+        setExampleFeeds(parsedFeeds);
+      }
+    });
+
+    ipcRenderer.on('response-subscribe', (event, response) => {
+      if (response && response.error) {
+        showModal('Error', response.error);
+      } else {
+        fetchExampleFeeds();
+      }
+    });
+
+    ipcRenderer.on('response-unsubscribe', (event, response) => {
+      if (response && response.error) {
+        showModal('Error', response.error);
+      } else {
+        fetchExampleFeeds();
       }
     });
 
@@ -24,17 +43,9 @@ function ExampleFeedsPage() {
 
     return () => {
       ipcRenderer.removeAllListeners('response-example-feeds');
+      ipcRenderer.removeAllListeners('response-subscribe');
+      ipcRenderer.removeAllListeners('response-unsubscribe');
     };
-  }, []);
-
-  const groupedFeeds = exampleFeeds.reduce((groups, feed) => {
-    const group = groups.find((group) => group.topic === feed.topic);
-    if (group) {
-      group.feeds.push(feed);
-    } else {
-      groups.push({ topic: feed.topic, feeds: [feed] });
-    }
-    return groups;
   }, []);
 
   const getColProps = () => {
@@ -64,7 +75,54 @@ function ExampleFeedsPage() {
     return colProps;
   };
 
-  console.log('ExampleFeedsPage rendered');
+  const handleSubscribe = (rssFeedUrl, description) => {
+    const ipcRenderer = window.electron.ipcRenderer;
+    setExampleFeeds((prevExampleFeeds) =>
+      prevExampleFeeds.map((feed) => {
+        if (feed.url === rssFeedUrl) {
+          return { ...feed, subscribed: true, description };
+        }
+        return feed;
+      })
+    );
+  
+    // Send the IPC message to subscribe to the feed
+    ipcRenderer.send('subscribe-to-feed', rssFeedUrl);
+  };
+
+  const handleUnsubscribe = (rssFeedUrl) => {
+    const ipcRenderer = window.electron.ipcRenderer;
+    setExampleFeeds((prevExampleFeeds) =>
+      prevExampleFeeds.map((feed) => {
+        if (feed.url === rssFeedUrl) {
+          return { ...feed, subscribed: false };
+        }
+        return feed;
+      })
+    );
+    ipcRenderer.send('unsubscribe-from-feed', rssFeedUrl);
+  };
+
+  const showModal = (title, content) => {
+    setModalTitle(title);
+    setModalContent(content);
+    setModalVisible(true);
+  };
+
+  const closeModal = () => {
+    setModalVisible(false);
+  };
+
+  // Calculate grouped feeds
+  const groupedFeeds = exampleFeeds.reduce((groups, feed) => {
+    const group = groups.find((group) => group.topic === feed.topic);
+    if (group) {
+      group.feeds.push(feed);
+    } else {
+      groups.push({ topic: feed.topic, feeds: [feed] });
+    }
+    return groups;
+  }, []);
 
   return (
     <div style={{ padding: '16px' }}>
@@ -83,12 +141,24 @@ function ExampleFeedsPage() {
                   rssFeedUrl={feed.url}
                   topic={feed.topic}
                   id={feed.id}
+                  subscribed={feed.subscribed}
+                  onSubscribe={handleSubscribe}
+                  onUnsubscribe={handleUnsubscribe}
                 />
               </Col>
             ))}
           </Row>
         </div>
       ))}
+      <Modal
+        title={modalTitle}
+        open={modalVisible}
+        onOk={closeModal}
+        onCancel={closeModal}
+        footer={null}
+      >
+        <p>{modalContent}</p>
+      </Modal>
     </div>
   );
 }

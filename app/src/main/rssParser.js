@@ -18,6 +18,7 @@ export async function parseRssFeeds_LastItem(ListofUrls) {
         const parsedFeed = {
           id: urlObj.id,
           url: url,
+          subscribed: urlObj.subscribed,
           topic: urlObj.topic,
           title: feedItem.title,
           description: urlObj.description,

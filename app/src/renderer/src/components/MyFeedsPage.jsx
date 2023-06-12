@@ -59,7 +59,7 @@ function MyFeedsPage() {
   };
 
   const handleAddFeed = () => {
-    const newFeed = { url: feedUrl, topic: feedTopic };
+    const newFeed = { url: feedUrl, topic: feedTopic, subscribed: true };
     setFeeds([...feeds, newFeed]);
     closeModal();
   };
@@ -91,17 +91,56 @@ function MyFeedsPage() {
     return colProps;
   };
 
+  const handleSubscribe = (rssFeedUrl) => {
+    const ipcRenderer = window.electron.ipcRenderer;
+
+    ipcRenderer.send('unsubscribe-from-feed', rssFeedUrl);
+
+    setFeeds((prevFeeds) =>
+      prevFeeds.map((feed) => {
+        if (feed.url === rssFeedUrl) {
+          return { ...feed, subscribed: false };
+        }
+        return feed;
+      })
+    );
+  };
+
+  const handleUnsubscribe = (rssFeedUrl) => {
+    const ipcRenderer = window.electron.ipcRenderer;
+
+    ipcRenderer.send('unsubscribe-from-feed', rssFeedUrl);
+
+    setFeeds((prevFeeds) =>
+      prevFeeds.filter((feed) => feed.url !== rssFeedUrl)
+    );
+  };
+
   return (
     <div style={{ padding: '16px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: '16px'
+        }}
+      >
         <h1 style={{ margin: 0 }}>My Feeds</h1>
         <Button type="primary" onClick={openModal}>
           Add Feed
         </Button>
       </div>
       {feeds.length === 0 ? (
-        <div style={{ margin: '16px', fontWeight: 'bold', textAlign: 'center', marginTop:'30%'}}>
-          Your feeds are empty. Subscribe or add some feeds.
+        <div
+          style={{
+            margin: '16px',
+            fontWeight: 'bold',
+            textAlign: 'center',
+            marginTop: '30%'
+          }}
+        >
+          Your subscribed feeds are empty. Subscribe or add some feeds.
         </div>
       ) : (
         groupedFeeds.map((group, groupIndex) => (
@@ -117,6 +156,9 @@ function MyFeedsPage() {
                     description={feed.description}
                     rssFeedUrl={feed.url}
                     topic={feed.topic}
+                    subscribed={feed.subscribed}
+                    onSubscribe={handleSubscribe}
+                    onUnsubscribe={handleUnsubscribe}
                   />
                 </Col>
               ))}
@@ -127,7 +169,7 @@ function MyFeedsPage() {
 
       <Modal
         title="Add Feed"
-        visible={modalOpen}
+        open={modalOpen}
         onCancel={closeModal}
         onOk={handleAddFeed}
         destroyOnClose
