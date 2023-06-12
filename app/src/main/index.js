@@ -1,8 +1,7 @@
 import { app, shell, BrowserWindow, ipcMain } from 'electron';
 import { join } from 'path';
 import { electronApp, optimizer, is } from '@electron-toolkit/utils';
-import icon from '../../resources/icon.png?asset';
-import Parser from 'rss-parser';
+import { parseRssFeeds_LastItem } from './rssParser';
 import NodeCach from 'node-cache';
 import fs from 'fs';
 
@@ -88,27 +87,12 @@ ipcMain.handle('get-app-dirname', (event) => {
 });
 
 // API Endpunkte für Rss Feeds des Users
-ipcMain.on('read-rssFeeds', async (event, pageNumber, itemsPerPage) => {
-  const startIndex = (pageNumber - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-
-  if (rssFeeds && rssFeeds.length > 0) {
-    const paginatedFeeds = rssFeeds.slice(startIndex, endIndex);
-    event.reply('response-rssFeeds', paginatedFeeds);
-  } else {
-    try {
-      const feeds = await fetchRssFeeds();
-      rssFeeds = feeds;
-
-      if (rssFeeds && rssFeeds.length > 0) {
-        const paginatedFeeds = rssFeeds.slice(startIndex, endIndex);
-        event.reply('response-rssFeeds', paginatedFeeds);
-      } else {
-        event.reply('response-rssFeeds', []);
-      }
-    } catch (error) {
-      event.reply('response-rssFeeds', []);
-    }
+ipcMain.on('read-rssFeeds', async (event) => {
+  try{
+    const parsedFeeds = await parseRssFeeds_LastItem(rssFeedUrls);
+    event.sender.send('response-rssFeeds', parsedFeeds)
+  }catch (error){
+    event.reply('response-example-feeds', {error: error.message})
   }
 });
 
@@ -137,36 +121,33 @@ ipcMain.on('update-rss-feed', (event, updatedRssFeed) => {
   }
 });
 
-ipcMain.on('subscribe-to-example-feed', (event, rssFeedUrl) => {
-   rssFeedUrls.push(rssFeedUrl);
-   saveRssFeedUrl(rssFeedUrlsFile);
-   event.reply('feed-subscribed');
-})
+ipcMain.on('subscribe-to-example-feed', (event, rssFeedUrl, description, topic) => {
+  try {
+    const existingFeed = rssFeedUrls.find(feed => feed.url === rssFeedUrl);
+
+    if (existingFeed) {
+      event.reply('feed-subscribed', { error: 'Feed URL already exists' });
+    } else {
+      const newFeedUrl = {
+        id: rssFeedUrls.length +1,
+        url: rssFeedUrl,
+        description: description,
+        topic: topic
+      };
+      rssFeedUrls.push(newFeedUrl);
+      saveRssFeedUrl(rssFeedUrlsFile);
+      event.reply('feed-subscribed');
+    }
+  } catch (error) {
+    console.error('Error subscribing to the example feed:', error);
+    event.reply('feed-subscribed', { error: error.message });
+  }
+});
 
 // API Endpunkte für Beispiel Feeds
 ipcMain.on('read-example-feeds', async (event) => {
   try{
-    const parsedFeeds = [];
-    const parser = new Parser();
-
-    for (const urlObj of exampleFeedUrls){
-      const url = urlObj.url;
-      const feed = await parser.parseURL(url);
-      const feedItem = feed.items[feed.items.length -1];
-      const feedImage = feed.image && feed.image.url ? feed.image.url : urlObj.image;
-      const parsedFeed = {
-        url: url,
-        topic: urlObj.topic,
-        title: feedItem.title,
-        description: urlObj.description,
-        link: feedItem.link,
-        pubDate: feedItem.isoDate,
-        author: feedItem.author,
-        image: feedImage,
-        overallDescription: feedItem.contentSnippet.replace(/\[(link|comments)\]/g, ''),
-      };
-      parsedFeeds.push(parsedFeed);
-    }
+    const parsedFeeds = await parseRssFeeds_LastItem(exampleFeedUrls);
     event.sender.send('response-example-feeds', parsedFeeds)
   }
   catch(error){
@@ -174,36 +155,6 @@ ipcMain.on('read-example-feeds', async (event) => {
   }
   
 })
-
-async function fetchRssFeeds() {
-  const parser = new Parser();
-  const fetchPromises = rssFeedUrls.map(async (urlObj) => {
-    try {
-      const feed = await parser.parseURL(urlObj.url);
-      const feedItem = feed.items[feed.items.length - 1];
-      const feedImage = feed.image && feed.image.url ? feed.image.url : urlObj.image;
-      const parsedFeed = {
-        url: urlObj.url,
-        topic: urlObj.topic,
-        title: feedItem.title,
-        description: urlObj.description,
-        link: feedItem.link,
-        pubDate: feedItem.isoDate,
-        author: feedItem.author,
-        image: feedImage,
-        overallDescription: feedItem.contentSnippet.replace(/\[(link|comments)\]/g, ''),
-      };
-      return parsedFeed;
-    } catch (error) {
-      // Handle any errors that occur while fetching or parsing the feed
-      console.error(`Error fetching RSS feed: ${urlObj.url}`, error);
-      return null; // Return null for failed feeds
-    }
-  });
-
-  const feeds = await Promise.all(fetchPromises);
-  return feeds.filter((feed_1) => feed_1 !== null);
-}
 
 
 //Updating RssFeeds, dass sie Aktuell sind

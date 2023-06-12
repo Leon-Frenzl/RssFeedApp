@@ -1,15 +1,18 @@
 [
     {
+        "id": "1",
         "url": "https://www.welt.de/feeds/section/politik.rss",
         "description": "Der Politik Feed der Welt.",
         "topic": "Politik"
     },
     {
+        "id": "2",
         "url": "https://www.welt.de/feeds/section/wirtschaft.rss",
         "description": "Der Wirtschafts Feed der Welt.",
         "topic": "Wirtschaft"
     },
     {
+        "id": "3",
         "url": "https://rss.golem.de/rss.php?ms=security&feed=RSS2.0",
         "description": "Golem Security Feed",
         "topic": "Technologie"

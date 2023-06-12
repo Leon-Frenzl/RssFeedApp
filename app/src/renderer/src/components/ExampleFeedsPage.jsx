@@ -13,7 +13,11 @@ function ExampleFeedsPage() {
     };
 
     ipcRenderer.on('response-example-feeds', (event, parsedFeeds) => {
-      setExampleFeeds(parsedFeeds);
+      if (Array.isArray(parsedFeeds)) {
+        setExampleFeeds(parsedFeeds);
+      } else {
+        setExampleFeeds([]); // or handle the error condition appropriately
+      }
     });
 
     fetchExampleFeeds();
@@ -60,6 +64,8 @@ function ExampleFeedsPage() {
     return colProps;
   };
 
+  console.log('ExampleFeedsPage rendered');
+
   return (
     <div style={{ padding: '16px' }}>
       <h1>Example Feeds Page</h1>
@@ -74,7 +80,9 @@ function ExampleFeedsPage() {
                   title={feed.title}
                   author={feed.author}
                   description={feed.description}
-                  rssFeedUrl={feed.url} // Corrected the prop name
+                  rssFeedUrl={feed.url}
+                  topic={feed.topic}
+                  id={feed.id}
                 />
               </Col>
             ))}

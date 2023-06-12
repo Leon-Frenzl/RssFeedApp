@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Card, Button } from 'antd';
 
-function ExampleFeedCard({ image, title, author, description, rssFeedUrl}) {
+function ExampleFeedCard({ id, image, title, author, description, rssFeedUrl, topic, subscribed }) {
   const [expanded, setExpanded] = useState(false);
   const toggleExpand = () => {
     setExpanded(!expanded);
@@ -23,12 +23,6 @@ function ExampleFeedCard({ image, title, author, description, rssFeedUrl}) {
     return description;
   };
 
-  const handleSubscribe = () => {
-    const ipcRenderer = window.electron.ipcRenderer;
-    ipcRenderer.send('subscribe-to-example-feed', rssFeedUrl)
-    console.log('feed-subscribed: ' + rssFeedUrl)
-  };
-
   return (
     <Card hoverable cover={<img alt="Feed" src={image} />} style={{ height: '100%' }}>
       <Card.Meta title={title} description={author} />
@@ -38,9 +32,11 @@ function ExampleFeedCard({ image, title, author, description, rssFeedUrl}) {
           {expanded ? 'Read Less' : 'Read More'}
         </Button>
       )}
-      <Button type="primary" onClick={handleSubscribe}>
-        Subscribe
-      </Button>
+      {!subscribed && (
+        <Button type="primary" onClick={handleSubscribe}>
+          Subscribe
+        </Button>
+      )}
     </Card>
   );
 }
