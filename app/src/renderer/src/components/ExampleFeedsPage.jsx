@@ -49,28 +49,10 @@ function ExampleFeedsPage() {
   }, []);
 
   const getColProps = () => {
-    const screenWidth = window.innerWidth;
-    let colProps;
-
-    if (screenWidth >= 1200) {
-      colProps = { span: 6 };
-    } else if (screenWidth >= 992) {
-      colProps = { span: 8 };
-    } else if (screenWidth >= 768) {
-      colProps = { span: 12 };
-    } else {
-      colProps = { span: 24 };
-    }
-
-    const maxCardsPerRow = 4;
-    const totalCards = groupedFeeds.reduce(
-      (count, group) => count + group.feeds.length,
-      0
-    );
-    const cardsPerRow = Math.min(totalCards, maxCardsPerRow);
-
-    colProps.span = Math.floor(24 / cardsPerRow);
-    colProps.style = { maxWidth: '300px' };
+    const colProps = {
+      span: 6,
+      style: { maxWidth: '300px' },
+    };
 
     return colProps;
   };
@@ -85,7 +67,7 @@ function ExampleFeedsPage() {
         return feed;
       })
     );
-  
+
     // Send the IPC message to subscribe to the feed
     ipcRenderer.send('subscribe-to-feed', rssFeedUrl);
   };
@@ -130,24 +112,31 @@ function ExampleFeedsPage() {
       {groupedFeeds.map((group, groupIndex) => (
         <div key={groupIndex}>
           <Divider orientation="left">{group.topic}</Divider>
-          <Row gutter={[16, 16]}>
-            {group.feeds.map((feed, feedIndex) => (
-              <Col key={feedIndex} {...getColProps()}>
-                <FeedCard
-                  image={feed.image}
-                  title={feed.title}
-                  author={feed.author}
-                  description={feed.description}
-                  rssFeedUrl={feed.url}
-                  topic={feed.topic}
-                  id={feed.id}
-                  subscribed={feed.subscribed}
-                  onSubscribe={handleSubscribe}
-                  onUnsubscribe={handleUnsubscribe}
-                />
-              </Col>
-            ))}
-          </Row>
+          {group.feeds.length > 0 && (
+            <Row gutter={[16, 16]}>
+              {group.feeds.map((feed, feedIndex) => (
+                <React.Fragment key={feedIndex}>
+                  <Col {...getColProps()}>
+                    <FeedCard
+                      image={feed.image}
+                      title={feed.title}
+                      author={feed.author}
+                      description={feed.description}
+                      rssFeedUrl={feed.url}
+                      topic={feed.topic}
+                      id={feed.id}
+                      subscribed={feed.subscribed}
+                      onSubscribe={handleSubscribe}
+                      onUnsubscribe={handleUnsubscribe}
+                    />
+                  </Col>
+                  {(feedIndex + 1) % 4 === 0 && (
+                    <div style={{ width: '100%' }}></div>
+                  )}
+                </React.Fragment>
+              ))}
+            </Row>
+          )}
         </div>
       ))}
       <Modal

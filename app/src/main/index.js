@@ -1,7 +1,7 @@
 import { app, shell, BrowserWindow, ipcMain } from 'electron';
 import { join } from 'path';
 import { electronApp, optimizer, is } from '@electron-toolkit/utils';
-import { parseRssFeeds_LastItem } from './rssParser';
+import { parseRssFeeds_LastItem, parseRssFeedForItems } from './rssParser';
 import NodeCach from 'node-cache';
 import fs from 'fs';
 
@@ -31,7 +31,7 @@ function saveRssFeedUrls(file, urls) {
 }
 
 let rssFeedUrls = loadRssFeeds(rssFeedUrlsFile);
-let exampleFeedUrls = loadRssFeeds(exampleFeedUrlsFile);
+let exampleFeedUrls = loadRssFeeds(exampleFeedUrlsFile);    
 
 function createWindow() {
   const mainWindow = new BrowserWindow({
@@ -92,7 +92,7 @@ ipcMain.on('read-rssFeeds', async (event) => {
 });
 
 ipcMain.on('add-rssFeed', (event, rssFeedUrl, rssFeedTopic) => {
-  const newRssFeed = { id: rssFeeds.length + 1, url: rssFeedUrl, topic: rssFeedTopic };
+  const newRssFeed = { id: "r" + (rssFeeds.length + 1), url: rssFeedUrl, topic: rssFeedTopic };
   const cachedFeeds = rssCache.get('feeds');
   if (cachedFeeds) {
     cachedFeeds.push(newRssFeed);
@@ -130,7 +130,7 @@ ipcMain.on('subscribe-to-feed', (event, rssFeedUrl, description, topic) => {
       event.reply('feed-subscribed', { error: 'Feed URL already exists' });
     } else {
       const newUserFeed = {
-        id: rssFeedUrls.length + 1,
+        id: "r" + (rssFeedUrls.length +1),
         url: rssFeedUrl,
         description: description,
         topic: topic,
@@ -178,6 +178,7 @@ ipcMain.on('read-example-feeds', async (event) => {
   }
 });
 
+//Not Working Right now
 function updateRssFeeds() {
   fetchRssFeeds().then((feeds) => {
     rssCache.set('feeds', feeds);
@@ -185,6 +186,32 @@ function updateRssFeeds() {
 }
 
 setInterval(updateRssFeeds, 60 * 60 * 1000);
+
+ipcMain.on('render-items', async (event, id) => {
+  const feed = exampleFeedUrls.find((feed) => feed.id === id);
+
+  if (feed) {
+    try {
+      const items = await parseRssFeedForItems(feed.url);
+      event.reply('response-render-items', items );
+    } catch (error) {
+      event.reply('response-render-items', { error: error.message });
+    }
+  } else {
+    const rssFeed = rssFeedUrls.find((feed) => feed.id === id);
+    if (rssFeed) {
+      try {
+        const items = await parseRssFeedForItems(rssFeed.url);
+        event.reply('response-render-items',  items );
+      } catch (error) {
+        event.reply('response-render-items', { error: error.message });
+      }
+    } else {
+      event.reply('response-render-items', { error: 'Feed not found' });
+    }
+  }
+});
+
 
 ipcMain.on('create-group', (event, createGroup) => {
   event.reply('response-create-groups', 'Not Implemented');

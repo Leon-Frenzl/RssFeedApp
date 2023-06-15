@@ -1,8 +1,22 @@
 import React, { useState } from 'react';
 import { Card, Button } from 'antd';
+import { useNavigate } from 'react-router-dom';
+import ItemPage from './ItemPage';
 
-function ExampleFeedCard({ id, image, title, author, description, rssFeedUrl, topic, subscribed, onSubscribe, onUnsubscribe }) {
+function ExampleFeedCard({
+  id,
+  image,
+  title,
+  author,
+  description,
+  rssFeedUrl,
+  topic,
+  subscribed,
+  onSubscribe,
+  onUnsubscribe,
+}) {
   const [expanded, setExpanded] = useState(false);
+  const navigate = useNavigate();
 
   const toggleExpand = () => {
     setExpanded(!expanded);
@@ -28,8 +42,12 @@ function ExampleFeedCard({ id, image, title, author, description, rssFeedUrl, to
     if (subscribed) {
       onUnsubscribe(rssFeedUrl);
     } else {
-      onSubscribe(rssFeedUrl); 
+      onSubscribe(rssFeedUrl);
     }
+  };
+
+  const rerouteToItemPage = () => {
+    navigate(`/items/${id}`);
   };
 
   return (
@@ -41,15 +59,20 @@ function ExampleFeedCard({ id, image, title, author, description, rssFeedUrl, to
           {expanded ? 'Read Less' : 'Read More'}
         </Button>
       )}
-      {subscribed ? (
-        <Button type="primary" onClick={handleSubscribe}>
-          Unsubscribe
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px' }}>
+        <Button type="primary" onClick={rerouteToItemPage}>
+          View Feed
         </Button>
-      ) : (
-        <Button type="primary" onClick={handleSubscribe}>
-          Subscribe
-        </Button>
-      )}
+        {subscribed ? (
+          <Button type="primary" onClick={handleSubscribe}>
+            Unsubscribe
+          </Button>
+        ) : (
+          <Button type="primary" onClick={handleSubscribe}>
+            Subscribe
+          </Button>
+        )}
+      </div>
     </Card>
   );
 }

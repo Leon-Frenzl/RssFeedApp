@@ -65,28 +65,10 @@ function MyFeedsPage() {
   };
 
   const getColProps = () => {
-    const screenWidth = window.innerWidth;
-    let colProps;
-
-    if (screenWidth >= 1200) {
-      colProps = { span: 6 };
-    } else if (screenWidth >= 992) {
-      colProps = { span: 8 };
-    } else if (screenWidth >= 768) {
-      colProps = { span: 12 };
-    } else {
-      colProps = { span: 24 };
-    }
-
-    const maxCardsPerRow = 4;
-    const totalCards = groupedFeeds.reduce(
-      (count, group) => count + group.feeds.length,
-      0
-    );
-    const cardsPerRow = Math.min(totalCards, maxCardsPerRow);
-
-    colProps.span = Math.floor(24 / cardsPerRow);
-    colProps.style = { maxWidth: '300px' };
+    const colProps = {
+      span: 6,
+      style: { maxWidth: '300px' },
+    };
 
     return colProps;
   };
@@ -123,7 +105,7 @@ function MyFeedsPage() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          marginBottom: '16px'
+          marginBottom: '16px',
         }}
       >
         <h1 style={{ margin: 0 }}>My Feeds</h1>
@@ -137,7 +119,7 @@ function MyFeedsPage() {
             margin: '16px',
             fontWeight: 'bold',
             textAlign: 'center',
-            marginTop: '30%'
+            marginTop: '30%',
           }}
         >
           Your subscribed feeds are empty. Subscribe or add some feeds.
@@ -148,8 +130,9 @@ function MyFeedsPage() {
             <Divider orientation="left">{group.topic}</Divider>
             <Row gutter={[16, 16]}>
               {group.feeds.map((feed, feedIndex) => (
-                <Col key={feedIndex} {...getColProps()}>
+                <Col key={feedIndex} span={6} style={{ maxWidth: '300px' }}>
                   <FeedCard
+                    id={feed.id}
                     image={feed.image}
                     title={feed.title}
                     author={feed.author}
@@ -169,7 +152,7 @@ function MyFeedsPage() {
 
       <Modal
         title="Add Feed"
-        open={modalOpen}
+        visible={modalOpen}
         onCancel={closeModal}
         onOk={handleAddFeed}
         destroyOnClose

@@ -1,46 +1,34 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Layout } from 'antd';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import ExampleFeedsPage from './ExampleFeedsPage';
 import MyFeedsPage from './MyFeedsPage';
 import GroupsPage from './GroupsPage';
 import DashboardPage from './DashboardPage';
+import ItemPage from './ItemPage';
 
 const { Content: AntContent } = Layout;
 
 function LayoutComponent() {
-    const [selectedMenuKey, setSelectedMenuKey] = useState('1');
-
-    const handleMenuClick = (key) => {
-        setSelectedMenuKey(key);
-    };
-
-    const renderContent = () => {
-        switch (selectedMenuKey) {
-            case '1':
-                return <ExampleFeedsPage />;
-            case '2':
-                return <MyFeedsPage />;
-            case '3':
-                return <GroupsPage />;
-            case '4':
-                return <DashboardPage />;
-            default:
-                return null;
-        }
-    };
-
-    return (
-        <Layout style={{ minHeight: '100vh' }}>
-            <Sidebar onMenuClick={handleMenuClick} selectedMenuKey={selectedMenuKey} className="sidebar"/>
-            <Layout>
-                <AntContent style={{ padding: '24px', overflow: 'auto' }}>
-                    {renderContent()}
-                </AntContent>
-            </Layout>
+  return (
+    <Router>
+      <Layout style={{ minHeight: '100vh' }}>
+        <Sidebar />
+        <Layout>
+          <AntContent style={{ padding: '24px', overflow: 'auto' }}>
+            <Routes>
+              <Route path="/" element={<ExampleFeedsPage />} />
+              <Route path="/my-feeds" element={<MyFeedsPage />} />
+              <Route path="/groups" element={<GroupsPage />} />
+              <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/items/:id" element={<ItemPage />} />
+            </Routes>
+          </AntContent>
         </Layout>
-
-    );
+      </Layout>
+    </Router>
+  );
 }
 
 export default LayoutComponent;
