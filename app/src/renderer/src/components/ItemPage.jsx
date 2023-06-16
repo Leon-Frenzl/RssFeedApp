@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Row, Col, Modal, Button } from 'antd';
 import { useParams, useNavigate } from 'react-router-dom';
+import { ArrowLeftOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 import ItemCard from './ItemCard';
 
 function ItemPage() {
@@ -23,7 +24,6 @@ function ItemPage() {
         showModal('Error', items.error);
       } else {
         setFeedItems(items);
-        console.log(items);
       }
     });
 
@@ -63,6 +63,7 @@ function ItemPage() {
             {rowItems.map((feed, index) => (
               <Col key={index} span={24 / itemsPerRow}>
                 <ItemCard
+                  title={feed.itemTitle}
                   link={feed.link}
                   pubDate={feed.pubDate}
                   content={feed.images[0]}
@@ -90,7 +91,7 @@ function ItemPage() {
     <div style={{ padding: '16px' }}>
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px' }}>
         <Button type="primary" onClick={navigateBack}>
-          Back
+          <ArrowLeftOutlined /> Back
         </Button>
         <h1 style={{ margin: '0 16px' }}>{feedItems.length > 0 ? feedItems[0].title : ''}</h1>
       </div>
@@ -99,7 +100,7 @@ function ItemPage() {
       </div>
       <Modal
         title={modalTitle}
-        open={modalVisible}
+        visible={modalVisible}
         onOk={closeModal}
         onCancel={closeModal}
         footer={null}

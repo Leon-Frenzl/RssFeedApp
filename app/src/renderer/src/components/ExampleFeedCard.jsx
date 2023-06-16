@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Card, Button } from 'antd';
 import { useNavigate } from 'react-router-dom';
-import ItemPage from './ItemPage';
+import { EyeOutlined, CheckOutlined, PlusOutlined, MinusOutlined } from '@ant-design/icons';
 
 function ExampleFeedCard({
   id,
@@ -39,11 +39,11 @@ function ExampleFeedCard({
   };
 
   const handleSubscribe = () => {
-    if (subscribed) {
-      onUnsubscribe(rssFeedUrl);
-    } else {
-      onSubscribe(rssFeedUrl);
-    }
+    onSubscribe(rssFeedUrl, description, topic);
+  };
+
+  const handleUnsubscribe = () => {
+    onUnsubscribe(rssFeedUrl);
   };
 
   const rerouteToItemPage = () => {
@@ -51,7 +51,30 @@ function ExampleFeedCard({
   };
 
   return (
-    <Card hoverable cover={<img alt="Feed" src={image} />} style={{ height: '100%' }}>
+    <Card hoverable style={{ height: '400px' }}>
+      <div
+        style={{
+          height: '200px',
+          width: '100%',
+          position: 'relative',
+          backgroundColor: '#f5f5f5',
+          overflow: 'hidden',
+        }}
+      >
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            bottom: 0,
+            left: 0,
+            right: 0,
+            backgroundImage: `url(${image})`,
+            backgroundSize: 'contain',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
+          }}
+        />
+      </div>
       <Card.Meta title={title} description={author} />
       <p>{getDescriptionText()}</p>
       {description && description.length > 100 && (
@@ -59,19 +82,17 @@ function ExampleFeedCard({
           {expanded ? 'Read Less' : 'Read More'}
         </Button>
       )}
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px' }}>
-        <Button type="primary" onClick={rerouteToItemPage}>
-          View Feed
-        </Button>
-        {subscribed ? (
-          <Button type="primary" onClick={handleSubscribe}>
-            Unsubscribe
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 'auto', marginBottom: 0 }}>
+        <div>
+          <Button type="primary" onClick={rerouteToItemPage} style={{ fontSize: '12px' }}>
+            <EyeOutlined /> View Feed
           </Button>
-        ) : (
-          <Button type="primary" onClick={handleSubscribe}>
-            Subscribe
+        </div>
+        <div>
+          <Button type="primary" onClick={subscribed ? handleUnsubscribe : handleSubscribe} style={{ fontSize: '12px' }}>
+            {subscribed ? <MinusOutlined /> : <PlusOutlined />} {subscribed ? 'Unsubscribe' : 'Subscribe'}
           </Button>
-        )}
+        </div>
       </div>
     </Card>
   );

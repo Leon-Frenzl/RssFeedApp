@@ -1,134 +1,114 @@
-import React from 'react';
-import { Row, Col, Divider } from 'antd';
-import FeedCard from './ExampleFeedCard';
+import React, { useEffect, useState } from 'react';
+import { Layout, Card, Row, Col, Statistic, Progress, List } from 'antd';
 
-function DashboardPage() {
-  // Example feed data
-  const feeds = [
-    {
-      title: 'Feed 1',
-      author: 'Author 1',
-      topic: 'Technology',
-      length: 10,
-      image: 'https://picsum.photos/400/400', // Update with your image path
-      description: 'This is a sample feed description.', // Update with your description
-    },
-    {
-      title: 'Feed 2',
-      author: 'Author 2',
-      topic: 'Finance',
-      length: 5,
-      image: 'https://picsum.photos/400/400', // Update with your image path
-      description:
-        'This is another sample feed description.Lorem ipsum dolor sit amet consectetur adipisicing elit. Maxime mollitia,molestiae quas vel sint commodi repudiandae consequuntur voluptatum laborum numquam blanditiis harum quisquam eius sed odit fugiat iusto fuga praesentium optio, eaque rerum! Provident similique accusantium nemo autem. Veritatis', // Update with your description
-    },
-    {
-      title: 'Feed 2',
-      author: 'Author 2',
-      topic: 'Finance',
-      length: 5,
-      image: 'https://picsum.photos/400/400', // Update with your image path
-      description:
-        'This is another sample feed description.Lorem ipsum dolor sit amet consectetur adipisicing elit. Maxime mollitia,molestiae quas vel sint commodi repudiandae consequuntur voluptatum laborum numquam blanditiis harum quisquam eius sed odit fugiat iusto fuga praesentium optio, eaque rerum! Provident similique accusantium nemo autem. Veritatis', // Update with your description
-    },
-    {
-      title: 'Feed 2',
-      author: 'Author 2',
-      topic: 'Finance',
-      length: 5,
-      image: 'https://picsum.photos/400/400', // Update with your image path
-      description:
-        'This is another sample feed description.Lorem ipsum dolor sit amet consectetur adipisicing elit. Maxime mollitia,molestiae quas vel sint commodi repudiandae consequuntur voluptatum laborum numquam blanditiis harum quisquam eius sed odit fugiat iusto fuga praesentium optio, eaque rerum! Provident similique accusantium nemo autem. Veritatis', // Update with your description
-    },
-    {
-      title: 'Feed 2',
-      author: 'Author 2',
-      topic: 'Finance',
-      length: 5,
-      image: 'https://picsum.photos/400/400', // Update with your image path
-      description:
-        'This is another sample feed description.Lorem ipsum dolor sit amet consectetur adipisicing elit. Maxime mollitia,molestiae quas vel sint commodi repudiandae consequuntur voluptatum laborum numquam blanditiis harum quisquam eius sed odit fugiat iusto fuga praesentium optio, eaque rerum! Provident similique accusantium nemo autem. Veritatis', // Update with your description
-    },{
-      title: 'Feed 2',
-      author: 'Author 2',
-      topic: 'Finance',
-      length: 5,
-      image: 'https://picsum.photos/400/400', // Update with your image path
-      description:
-        'This is another sample feed description.Lorem ipsum dolor sit amet consectetur adipisicing elit. Maxime mollitia,molestiae quas vel sint commodi repudiandae consequuntur voluptatum laborum numquam blanditiis harum quisquam eius sed odit fugiat iusto fuga praesentium optio, eaque rerum! Provident similique accusantium nemo autem. Veritatis', // Update with your description
-    },{
-      title: 'Feed 2',
-      author: 'Author 2',
-      topic: 'Finance',
-      length: 5,
-      image: 'https://picsum.photos/400/400', // Update with your image path
-      description:
-        'This is another sample feed description.Lorem ipsum dolor sit amet consectetur adipisicing elit. Maxime mollitia,molestiae quas vel sint commodi repudiandae consequuntur voluptatum laborum numquam blanditiis harum quisquam eius sed odit fugiat iusto fuga praesentium optio, eaque rerum! Provident similique accusantium nemo autem. Veritatis', // Update with your description
-    },{
-      title: 'Feed 2',
-      author: 'Author 2',
-      topic: 'Finance',
-      length: 5,
-      image: 'https://picsum.photos/400/400', // Update with your image path
-      description:
-        'This is another sample feed description.Lorem ipsum dolor sit amet consectetur adipisicing elit. Maxime mollitia,molestiae quas vel sint commodi repudiandae consequuntur voluptatum laborum numquam blanditiis harum quisquam eius sed odit fugiat iusto fuga praesentium optio, eaque rerum! Provident similique accusantium nemo autem. Veritatis', // Update with your description
-    },
-    // Add more feed data as needed
-  ];
+const { Header, Content, Footer } = Layout;
 
-  const groupedFeeds = feeds.reduce((groups, feed) => {
-    const group = groups.find((group) => group.topic === feed.topic);
-    if (group) {
-      group.feeds.push(feed);
-    } else {
-      groups.push({ topic: feed.topic, feeds: [feed] });
-    }
-    return groups;
+function DashboardPage({appUsageTime}) {
+  const [rssFeeds, setRssFeeds] = useState([]);
+  const [updatedFeeds, setUpdatedFeeds] = useState([]);
+  const [socialMediaNotifications, setSocialMediaNotifications] = useState([]);
+
+  useEffect(() => {
+    // Simulate fetching data from APIs or other sources
+    // Replace with your actual API calls or data retrieval logic
+
+    // Fetch RSS feeds
+    const fetchRssFeeds = () => {
+      // Simulated API call to fetch RSS feeds
+      setTimeout(() => {
+        const feeds = [
+          { title: 'Feed 1', readTime: 12 },
+          { title: 'Feed 2', readTime: 8 },
+          { title: 'Feed 3', readTime: 15 },
+        ];
+        setRssFeeds(feeds);
+      }, 1500);
+    };
+
+    // Fetch updated feeds
+    const fetchUpdatedFeeds = () => {
+      // Simulated API call to fetch updated feeds
+      setTimeout(() => {
+        const updatedFeeds = [
+          { title: 'Updated Feed 1', updatedTime: '10 minutes ago' },
+          { title: 'Updated Feed 2', updatedTime: '1 hour ago' },
+          { title: 'Updated Feed 3', updatedTime: '2 hours ago' },
+        ];
+        setUpdatedFeeds(updatedFeeds);
+      }, 2000);
+    };
+
+    // Fetch social media notifications
+    const fetchSocialMediaNotifications = () => {
+      // Simulated API call to fetch social media notifications
+      setTimeout(() => {
+        const notifications = [
+          { id: 1, text: 'New message from John Doe' },
+          { id: 2, text: 'You have 10 new followers' },
+          { id: 3, text: 'Your post has been shared 50 times' },
+        ];
+        setSocialMediaNotifications(notifications);
+      }, 2500);
+    };
+
+    // Fetch all data
+    fetchRssFeeds();
+    fetchUpdatedFeeds();
+    fetchSocialMediaNotifications();
   }, []);
 
-  const getColProps = () => {
-    const screenWidth = window.innerWidth;
-    let colProps;
-
-    if (screenWidth >= 1200) {
-      colProps = { span: 6 };
-    } else if (screenWidth >= 992) {
-      colProps = { span: 8 };
-    } else if (screenWidth >= 768) {
-      colProps = { span: 12 };
-    } else {
-      colProps = { span: 24 };
-    }
-
-    const maxCardsPerRow = 4;
-    const totalCards = groupedFeeds.reduce(
-      (count, group) => count + group.feeds.length,
-      0
-    );
-    const cardsPerRow = Math.min(totalCards, maxCardsPerRow);
-
-    colProps.span = Math.floor(24 / cardsPerRow);
-    colProps.style = { maxWidth: '300px' };
-
-    return colProps;
-  };
-
   return (
-    <div style={{ padding: '16px' }}>
-      <h1>Dashboard</h1>
-      {groupedFeeds.map((group, groupIndex) => (
-        <div key={groupIndex}>
-          {groupIndex !== 0 && <Divider orientation="left">{group.topic}</Divider>}
+    <Layout style={{ minHeight: '100vh' }}>
+      <Header style={{ background: '#fff', padding: 0 }} />
+      <Content style={{ margin: '24px 16px 0' }}>
+        <div style={{ padding: 24, minHeight: 360 }}>
           <Row gutter={[16, 16]}>
-            {group.feeds.map((feed, feedIndex) => (
-              <Col key={feedIndex} {...getColProps()}>
-                <FeedCard {...feed} />
-              </Col>
-            ))}
+            <Col xs={24} sm={24} md={8} lg={8} xl={8}>
+              <Card title="App Usage Statistics" bordered={false}>
+                <Statistic title="Total App Usage" value={`${appUsageTime.toString()} seconds`} />
+              </Card>
+            </Col>
+            <Col xs={24} sm={24} md={8} lg={8} xl={8}>
+              <Card title="Read Time on RSS Feeds" bordered={false}>
+                <List
+                  dataSource={rssFeeds}
+                  renderItem={(feed) => (
+                    <List.Item>
+                      <List.Item.Meta title={feed.title} />
+                      <Progress
+                        percent={(feed.readTime / 20) * 100} // Assuming a maximum read time of 20 minutes
+                        format={(percent) => `${Math.round((percent * 20) / 100)} min`}
+                      />
+                    </List.Item>
+                  )}
+                />
+              </Card>
+            </Col>
+            <Col xs={24} sm={24} md={8} lg={8} xl={8}>
+              <Card title="Updated Feeds" bordered={false}>
+                <List
+                  dataSource={updatedFeeds}
+                  renderItem={(feed) => (
+                    <List.Item>{`${feed.title} (Updated ${feed.updatedTime})`}</List.Item>
+                  )}
+                />
+              </Card>
+            </Col>
+          </Row>
+          <Row gutter={[16, 16]} style={{ marginTop: 24 }}>
+            <Col xs={24} sm={24} md={24} lg={24} xl={24}>
+              <Card title="Social Media Notifications" bordered={false}>
+                <List
+                  dataSource={socialMediaNotifications}
+                  renderItem={(notification) => <List.Item>{notification.text}</List.Item>}
+                />
+              </Card>
+            </Col>
           </Row>
         </div>
-      ))}
-    </div>
+      </Content>
+      <Footer style={{ textAlign: 'center' }}>RSS Feed App ©2023 Created by Leon Frenzl</Footer>
+    </Layout>
   );
 }
 

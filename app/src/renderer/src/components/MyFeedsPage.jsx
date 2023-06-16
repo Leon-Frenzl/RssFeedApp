@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Modal, Form, Input, Button, Card, Divider } from 'antd';
+import { PlusOutlined } from '@ant-design/icons';
 import FeedCard from './ExampleFeedCard';
 
 function MyFeedsPage() {
@@ -17,6 +18,7 @@ function MyFeedsPage() {
 
     ipcRenderer.on('response-rssFeeds', (event, parsedFeeds) => {
       if (Array.isArray(parsedFeeds)) {
+        console.log(parsedFeeds);
         setFeeds(parsedFeeds);
       } else {
         setFeeds([]);
@@ -28,16 +30,6 @@ function MyFeedsPage() {
     return () => {
       ipcRenderer.removeAllListeners('response-rssFeeds');
     };
-  }, []);
-
-  const groupedFeeds = feeds.reduce((groups, feed) => {
-    const group = groups.find((group) => group.topic === feed.topic);
-    if (group) {
-      group.feeds.push(feed);
-    } else {
-      groups.push({ topic: feed.topic, feeds: [feed] });
-    }
-    return groups;
   }, []);
 
   const openModal = () => {
@@ -62,15 +54,6 @@ function MyFeedsPage() {
     const newFeed = { url: feedUrl, topic: feedTopic, subscribed: true };
     setFeeds([...feeds, newFeed]);
     closeModal();
-  };
-
-  const getColProps = () => {
-    const colProps = {
-      span: 6,
-      style: { maxWidth: '300px' },
-    };
-
-    return colProps;
   };
 
   const handleSubscribe = (rssFeedUrl) => {
@@ -98,6 +81,25 @@ function MyFeedsPage() {
     );
   };
 
+  const groupedFeeds = feeds.reduce((groups, feed) => {
+    const groupIndex = groups.findIndex((group) => group.topic === feed.topic);
+    if (groupIndex !== -1) {
+      groups[groupIndex].feeds.push(feed);
+    } else {
+      groups.push({ topic: feed.topic, feeds: [feed] });
+    }
+    return groups;
+  }, []);
+
+  const getColProps = () => {
+    const colProps = {
+      span: 6,
+      style: { maxWidth: '300px' },
+    };
+
+    return colProps;
+  };
+
   return (
     <div style={{ padding: '16px' }}>
       <div
@@ -110,7 +112,7 @@ function MyFeedsPage() {
       >
         <h1 style={{ margin: 0 }}>My Feeds</h1>
         <Button type="primary" onClick={openModal}>
-          Add Feed
+          <PlusOutlined /> Add Feed
         </Button>
       </div>
       {feeds.length === 0 ? (
@@ -119,10 +121,9 @@ function MyFeedsPage() {
             margin: '16px',
             fontWeight: 'bold',
             textAlign: 'center',
-            marginTop: '30%',
           }}
         >
-          Your subscribed feeds are empty. Subscribe or add some feeds.
+          No feeds available. Add a new feed to get started!
         </div>
       ) : (
         groupedFeeds.map((group, groupIndex) => (
@@ -130,7 +131,7 @@ function MyFeedsPage() {
             <Divider orientation="left">{group.topic}</Divider>
             <Row gutter={[16, 16]}>
               {group.feeds.map((feed, feedIndex) => (
-                <Col key={feedIndex} span={6} style={{ maxWidth: '300px' }}>
+                <Col key={feedIndex} {...getColProps()}>
                   <FeedCard
                     id={feed.id}
                     image={feed.image}
@@ -151,18 +152,37 @@ function MyFeedsPage() {
       )}
 
       <Modal
-        title="Add Feed"
         visible={modalOpen}
         onCancel={closeModal}
-        onOk={handleAddFeed}
-        destroyOnClose
+        title="Add Feed"
+        footer={[
+          <Button key="cancel" onClick={closeModal}>
+            Cancel
+          </Button>,
+          <Button
+            key="submit"
+            type="primary"
+            disabled={!feedUrl || !feedTopic}
+            onClick={handleAddFeed}
+          >
+            Add
+          </Button>,
+        ]}
       >
         <Form layout="vertical">
           <Form.Item label="Feed URL">
-            <Input value={feedUrl} onChange={handleFeedUrlChange} />
+            <Input
+              value={feedUrl}
+              onChange={handleFeedUrlChange}
+              placeholder="Enter the feed URL"
+            />
           </Form.Item>
           <Form.Item label="Topic">
-            <Input value={feedTopic} onChange={handleFeedTopicChange} />
+            <Input
+              value={feedTopic}
+              onChange={handleFeedTopicChange}
+              placeholder="Enter the topic"
+            />
           </Form.Item>
         </Form>
       </Modal>

@@ -20,7 +20,7 @@ export async function parseRssFeeds_LastItem(ListofUrls) {
           url: url,
           subscribed: urlObj.subscribed,
           topic: urlObj.topic,
-          title: feedItem.title,
+          title: feed.title,
           description: urlObj.description,
           link: feedItem.link,
           pubDate: feedItem.isoDate,
@@ -114,6 +114,7 @@ export async function parseRssFeedForItems(url) {
   try {
     const feed = await parser.parseURL(url);
     const items = feed.items.map((item) => {
+      const itemTitle = item.title;
       const title = feed.title;
       const categories = item.categories;
       const content = item.content;
@@ -121,7 +122,9 @@ export async function parseRssFeedForItems(url) {
       const images = extractImageUrls(item);
       const videos = extractVideoUrls(item);
 
+
       return {
+        itemTitle, 
         title,
         categories,
         content,

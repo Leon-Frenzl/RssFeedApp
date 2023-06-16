@@ -4,7 +4,7 @@ import { Link, useLocation } from 'react-router-dom';
 import {
   AppstoreOutlined,
   MailOutlined,
-  UsergroupAddOutlined,
+  BookOutlined,
   DashboardOutlined,
 } from '@ant-design/icons';
 
@@ -16,7 +16,7 @@ function Sidebar() {
   const menuItems = [
     { key: '/', icon: <AppstoreOutlined />, label: 'Example Feeds' },
     { key: '/my-feeds', icon: <MailOutlined />, label: 'My Feeds' },
-    { key: '/groups', icon: <UsergroupAddOutlined />, label: 'Groups' },
+    { key: '/packages', icon: <BookOutlined />, label: 'Packages' },
     { key: '/dashboard', icon: <DashboardOutlined />, label: 'Dashboard' },
   ];
 
@@ -27,12 +27,9 @@ function Sidebar() {
         theme="light"
         selectedKeys={[location.pathname]}
       >
-        {menuItems.map((menuItem) => (
-          <Menu.Item
-            key={menuItem.key}
-            icon={menuItem.icon}
-          >
-            <Link to={menuItem.key}>{menuItem.label}</Link>
+        {menuItems.map((item) => (
+          <Menu.Item key={item.key} icon={item.icon}>
+            <Link to={item.key}>{item.label}</Link>
           </Menu.Item>
         ))}
       </Menu>

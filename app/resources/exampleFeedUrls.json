@@ -1,1 +1,31 @@
-[{"id":"e1","url":"https://www.welt.de/feeds/section/politik.rss","description":"Der Politik Feed der Welt.","topic":"Politik","subscribed":true},{"id":"e2","url":"https://www.welt.de/feeds/section/wirtschaft.rss","description":"Der Wirtschafts Feed der Welt.","topic":"Wirtschaft","subscribed":true},{"id":"e3","url":"https://rss.golem.de/rss.php?ms=security&feed=RSS2.0","description":"Golem Security Feed","topic":"Technologie","subscribed":false}]
+[
+    {
+        "id": "e1",
+        "url": "https://www.welt.de/feeds/section/politik.rss",
+        "description": "Der Politik Feed der Welt.",
+        "topic": "Politik",
+        "subscribed": false
+    },
+    {
+        "id": "e2",
+        "url": "https://www.welt.de/feeds/section/wirtschaft.rss",
+        "description": "Der Wirtschafts Feed der Welt.",
+        "topic": "Wirtschaft",
+        "subscribed": false
+    },
+    {
+        "id": "e3",
+        "url": "https://rss.golem.de/rss.php?ms=security&feed=RSS2.0",
+        "description": "Golem Security Feed",
+        "topic": "Technologie",
+        "subscribed": false
+    },
+    {
+        "id": "e4",
+        "url": "https://www.dakks.de/rss/rss-docs-de.xml",
+        "description": "Dakks Feed",
+        "topic": "Technologie",
+        "subscribed": false,
+        "image": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAARMAAAC3CAMAAAAGjUrGAAAAOVBMVEXm6ezb3uGXoazq7e/Dyc/l6ey/xcyrs7vX3OCnr7jV2d6Zo63O09ibpa+5wMezusLv8fTP1NnIzdMlnmvOAAABdElEQVR4nO3Z0ZKaMBiAUUwQlsaIy/s/bAHdabXxdmn7n3PDCDeZb0JA0nUAAAAAAAAAAAAAAAAAAAAAAAAAAP+u3HT0qA6UT/3Q1J+iZslDemsIGmVJpY5NtaTl6NEdItcyt5eTnMdSY06UlD7eXMk/UvrWofwtzu+bdNGb5NPl4/VGCd4kz+tjZnq5FrxJn8pqfp4psZvkqVxvfUmabB5Naulvn78S3NsEbzKkMpYy3lvkft6PsZt03bSusfW8n8rXVPblNnqTfBkeL/JbkrJHid6k+1pe1yRp/txnSvgmD3uSnC9bFE129yTbrbRG0WTzleQepVZNfkuyR9HkOck9Svgmz0nW30uJ3uQ1iWdxI0n4Jo0k0Zu0kgRv0kwStsn23T63k4RtkmsZb+s/4euttb8zxdzfWbYvA7WO0x9qSZejR3eM3Ke0ZmnuF/cxp8m2s7MMfctyjpoEAAAAAAAAAAAAAAAAAAAAAAAAAPgPnHj1E96TDiAitj9wAAAAAElFTkSuQmCC"
+    }
+]

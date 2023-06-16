@@ -5,6 +5,10 @@ import { parseRssFeeds_LastItem, parseRssFeedForItems } from './rssParser';
 import NodeCach from 'node-cache';
 import fs from 'fs';
 
+let appUsageStartTime = null;
+let appUsageInterval = null;
+let appUsageTime = 0;
+
 const rssCache = new NodeCach({ stdTTL: 600 });
 const rssFeedUrlsFile = join(app.getPath('userData'), 'rssFeedUrls.json');
 const exampleFeedUrlsFile = join(app.getAppPath(), 'resources', 'exampleFeedUrls.json');
@@ -30,6 +34,24 @@ function saveRssFeedUrls(file, urls) {
   }
 }
 
+function startAppUsageTimer() {
+  appUsageStartTime = Date.now();
+  appUsageInterval = setInterval(() => {
+    appUsageTime = Math.floor((Date.now() - appUsageStartTime) / 1000);
+    mainWindow.webContents.send('app-usage-time', appUsageTime); // Send the app usage time to the renderer process
+  }, 1000);
+}
+
+function stopAppUsageTimer() {
+  clearInterval(appUsageInterval);
+  const usageTime = appUsageTime;
+  appUsageStartTime = null;
+  appUsageInterval = null;
+  appUsageTime = 0;
+  return usageTime;
+}
+
+//Load Files for rssFeedUrls and exampleFeedUrls into a JSON Array
 let rssFeedUrls = loadRssFeeds(rssFeedUrlsFile);
 let exampleFeedUrls = loadRssFeeds(exampleFeedUrlsFile);    
 
@@ -130,7 +152,7 @@ ipcMain.on('subscribe-to-feed', (event, rssFeedUrl, description, topic) => {
       event.reply('feed-subscribed', { error: 'Feed URL already exists' });
     } else {
       const newUserFeed = {
-        id: "r" + (rssFeedUrls.length +1),
+        id: "r" + (rssFeedUrls.length + 1),
         url: rssFeedUrl,
         description: description,
         topic: topic,
@@ -147,7 +169,7 @@ ipcMain.on('subscribe-to-feed', (event, rssFeedUrl, description, topic) => {
   }
 });
 
-ipcMain.on('unsubscribe-from-feed', (event, rssFeedUrl) => {
+ipcMain.on('unsubscribe-from-feed', (event, rssFeedUrl, topic) => {
   try {
     const userFeedIndex = rssFeedUrls.findIndex((feed) => feed.url === rssFeedUrl);
     if (userFeedIndex !== -1) {
@@ -178,7 +200,10 @@ ipcMain.on('read-example-feeds', async (event) => {
   }
 });
 
-//Not Working Right now
+function fetchRssFeeds(){
+  console.log("Update not implemented, rigth now")
+}
+
 function updateRssFeeds() {
   fetchRssFeeds().then((feeds) => {
     rssCache.set('feeds', feeds);
@@ -212,19 +237,28 @@ ipcMain.on('render-items', async (event, id) => {
   }
 });
 
+ipcMain.on('startAppUsageTimer', () => {
+  if(!appUsageStartTime){startAppUsageTimer();}
+})
 
-ipcMain.on('create-group', (event, createGroup) => {
-  event.reply('response-create-groups', 'Not Implemented');
+ipcMain.on('stopAppUsageTimer', (event) => {
+  const usageTime = stopAppUsageTimer();
+  event.reply('appUsageTime', usageTime); 
+})
+
+
+ipcMain.on('create-package', (event, createGroup) => {
+  event.reply('response-create-package', 'Not Implemented');
 });
 
-ipcMain.on('read-groups', (event) => {
-  event.reply('response-read-groups', 'Not Implemented');
+ipcMain.on('subscribe-to-pacakge', (event, packageID) => {
+  event.reply('response-subsribe-package', 'Not Implemented')
+})
+
+ipcMain.on('update-package', (event) => {
+  event.reply('response-update-package', 'Not Implemented');
 });
 
-ipcMain.on('update-groups', (event) => {
-  event.reply('response-update-groups', 'Not Implemented');
-});
-
-ipcMain.on('delete-groups', (event) => {
-  event.reply('response-delet-groups', 'Not Implemented');
+ipcMain.on('delete-package', (event) => {
+  event.reply('response-delet-package', 'Not Implemented');
 });
