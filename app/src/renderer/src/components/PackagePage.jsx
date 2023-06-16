@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Row, Col, Divider, Button, Card, Input, message } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Row, Col, Divider, Button, Card, Input, message, List } from 'antd';
 import {
   PlusOutlined,
   EditOutlined,
@@ -7,234 +7,292 @@ import {
   CheckOutlined,
   CloseOutlined,
 } from '@ant-design/icons';
-
-// Example feed data
-const feeds = [
-  {
-    id: 'feed1',
-    title: 'Feed 1',
-    author: 'Author 1',
-    topic: 'Technology',
-    length: 10,
-    image: 'https://picsum.photos/400/400',
-    description: 'This is a sample feed description.',
-  },
-  {
-    id: 'feed2',
-    title: 'Feed 2',
-    author: 'Author 2',
-    topic: 'Finance',
-    length: 5,
-    image: 'https://picsum.photos/400/400',
-    description: 'This is another sample feed description.',
-  },
-  // Add more feed data as needed
-];
+import './css/PackagePage.css';
 
 function PackagePage() {
   const [packages, setPackages] = useState([]);
-  const [selectedPackage, setSelectedPackage] = useState(null);
-  const [selectedFeeds, setSelectedFeeds] = useState([]);
-  const [editingPackageName, setEditingPackageName] = useState(false);
+  const [feeds, setFeeds] = useState([]);
   const [newPackageName, setNewPackageName] = useState('');
+  const [selectedFeeds, setSelectedFeeds] = useState([]);
+  const [selectedPackage, setSelectedPackage] = useState(null);
+
+  const ipcRenderer = window.electron.ipcRenderer;
+
+  const fetchFeeds = async () => {
+    ipcRenderer.send('read-example-feeds');
+  };
+
+  const fetchPackages = async () => {
+    ipcRenderer.send('read-packages');
+  };
+
+  useEffect(() => {
+    const ipcRenderer = window.electron.ipcRenderer;
+  
+    const fetchFeeds = async () => {
+      ipcRenderer.send('read-example-feeds');
+    };
+  
+    const fetchPackages = async () => {
+      ipcRenderer.send('read-packages');
+    };
+  
+    const fetchFeedsWithDelay = () => {
+      setTimeout(fetchFeeds, 10000); // Delay of 1 second
+    };
+  
+    const fetchPackagesWithDelay = () => {
+      setTimeout(fetchPackages, 10000); // Delay of 1 second
+    };
+  
+    ipcRenderer.on('response-read-packages', (event, loadedPackages) => {
+      if (Array.isArray(loadedPackages)) {
+        setPackages([...loadedPackages]);
+      } else {
+        setPackages([]);
+      }
+    });
+  
+    ipcRenderer.on('response-example-feeds', (event, parsedFeeds) => {
+      if (Array.isArray(parsedFeeds)) {
+        setFeeds(parsedFeeds);
+      } else {
+        setFeeds([]);
+      }
+    });
+  
+    ipcRenderer.on('response-add-feeds-to-package', (event, packageId, updatedFeeds) => {
+      const updatedPackages = packages.map((pkg) => {
+        if (pkg.id === packageId) {
+          return { ...pkg, feeds: updatedFeeds };
+        }
+        return pkg;
+      });
+      setPackages(updatedPackages);
+    });
+  
+    ipcRenderer.on('response-remove-feed-from-package', (event, packageId, updatedFeeds) => {
+      const updatedPackages = packages.map((pkg) => {
+        if (pkg.id === packageId) {
+          return { ...pkg, feeds: updatedFeeds };
+        }
+        return pkg;
+      });
+      setPackages(updatedPackages);
+    });
+  
+    fetchFeedsWithDelay();
+    fetchPackagesWithDelay();
+  
+    return () => {
+      ipcRenderer.removeAllListeners('response-read-packages');
+      ipcRenderer.removeAllListeners('response-example-feeds');
+      ipcRenderer.removeAllListeners('response-package-feeds');
+      ipcRenderer.removeAllListeners('response-add-feeds-to-package');
+      ipcRenderer.removeAllListeners('response-remove-feed-from-package');
+    };
+  }, []);
 
   // Handle creating a new package
   const handleCreatePackage = () => {
-    const newPackage = {
-      id: `package${packages.length + 1}`,
-      name: `Package ${packages.length + 1}`,
-      feeds: [],
-    };
-    setPackages([...packages, newPackage]);
-    setSelectedPackage(newPackage);
-    setSelectedFeeds([]);
-  };
-
-  // Handle deleting a package
-  const handleDeletePackage = () => {
-    setPackages(packages.filter((pkg) => pkg !== selectedPackage));
-    setSelectedPackage(null);
-    setSelectedFeeds([]);
-  };
-
-  // Handle adding feeds to the selected package
-  const handleAddFeeds = () => {
-    const feedIds = selectedPackage.feeds.map((feed) => feed.id);
-    const uniqueFeeds = selectedFeeds.filter((feed) => !feedIds.includes(feed.id));
-
-    if (uniqueFeeds.length === 0) {
-      message.info('Feeds already exist in the package.');
+    if (newPackageName.trim() === '') {
+      message.error('Please enter a package name.');
       return;
     }
 
-    const updatedPackage = {
-      ...selectedPackage,
-      feeds: [...selectedPackage.feeds, ...uniqueFeeds],
+    const existingIds = packages.map((pkg) => pkg.id);
+    const maxId = existingIds.length === 0 ? 0 : Math.max(...existingIds);
+
+    const newPackage = {
+      id: maxId + 1,
+      name: newPackageName.trim(),
+      feeds: [],
+      subscribed: false,
     };
-    setPackages(packages.map((pkg) => (pkg === selectedPackage ? updatedPackage : pkg)));
-    setSelectedFeeds([]);
-    setSelectedPackage(updatedPackage); // Update selectedPackage to reflect the added feeds
+
+    ipcRenderer.send('create-package', newPackage);
+
+    ipcRenderer.once('response-create-package', (event, createdPackage) => {
+      setPackages([...packages, createdPackage]);
+    });
+
+    setNewPackageName('');
+  };
+
+  // Handle deleting a package
+  const handleDeletePackage = (pkgID) => {
+    const updatedPackages = packages.filter((pkg) => pkg.id !== pkgID);
+    setPackages([...updatedPackages]);
+
+    ipcRenderer.send('delete-package', pkgID);
+  };
+
+  // Handle adding feeds to the selected package
+  const handleAddFeeds = (feeds) => {
+    if (selectedPackage) {
+      const updatedPackage = { ...selectedPackage, feeds };
+      ipcRenderer.send('add-feeds-to-package', selectedPackage.id, feeds);
+      setSelectedPackage(updatedPackage);
+    }
   };
 
   // Handle removing a feed from the selected package
-  const handleRemoveFeed = (feedId) => {
-    const updatedPackage = {
-      ...selectedPackage,
-      feeds: selectedPackage.feeds.filter((feed) => feed.id !== feedId),
-    };
+  const handleRemoveFeed = (packageId, feedId) => {
+    ipcRenderer.send('remove-feed-from-package', packageId, feedId);
+  };
+
+  // Handle editing the package name
+  const handleEditPackageName = (pkgId) => {
     const updatedPackages = packages.map((pkg) => {
-      if (pkg.id === selectedPackage.id) {
-        return updatedPackage;
+      if (pkg.id === pkgId) {
+        return { ...pkg, editing: true };
       }
       return pkg;
     });
     setPackages(updatedPackages);
-    setSelectedPackage(updatedPackage);
-  };
-
-  // Handle editing the package name
-  const handleEditPackageName = () => {
-    setNewPackageName(selectedPackage.name);
-    setEditingPackageName(true);
   };
 
   // Handle saving the edited package name
-  const handleSavePackageName = () => {
-    const updatedPackage = { ...selectedPackage, name: newPackageName };
-    setPackages(packages.map((pkg) => (pkg === selectedPackage ? updatedPackage : pkg)));
-    setSelectedPackage(updatedPackage);
-    setEditingPackageName(false);
+  const handleSavePackageName = (pkgId, newName) => {
+    const updatedPackages = packages.map((pkg) => {
+      if (pkg.id === pkgId) {
+        return { ...pkg, editing: false, name: newName };
+      }
+      return pkg;
+    });
+    setPackages(updatedPackages);
+
+    ipcRenderer.send('update-package-name', pkgId, newName);
   };
 
   // Handle selecting a package
   const handleSelectPackage = (pkg) => {
-    setSelectedPackage(pkg);
-    setSelectedFeeds([]);
-    setEditingPackageName(false);
+    if (selectedPackage && selectedPackage.id === pkg.id) {
+      setSelectedPackage(null); // Unselect the package if it's already selected
+    } else {
+      setSelectedPackage(pkg); // Select the package if it's not selected
+    }
   };
 
   // Handle selecting/unselecting a feed
   const handleToggleFeedSelection = (feedId) => {
-    setSelectedFeeds((prevSelectedFeeds) => {
-      const isFeedSelected = prevSelectedFeeds.some((feed) => feed.id === feedId);
-      if (!isFeedSelected) {
-        // Feed is not selected, add it to the selected feeds
-        const feedToAdd = feeds.find((feed) => feed.id === feedId);
-        return [...prevSelectedFeeds, feedToAdd];
-      } else {
-        // Feed is already selected, remove it from the selected feeds
-        return prevSelectedFeeds.filter((feed) => feed.id !== feedId);
-      }
-    });
+    if (selectedFeeds.includes(feedId)) {
+      // Feed is already selected, so remove it
+      const updatedFeeds = selectedFeeds.filter((id) => id !== feedId);
+      setSelectedFeeds(updatedFeeds);
+    } else {
+      // Feed is not selected, so add it
+      setSelectedFeeds([...selectedFeeds, feedId]);
+    }
   };
 
   // Handle subscribing to a package
-  const handleSubscribePackage = (pkg) => {
-    console.log(`Subscribed to package: ${pkg.name}`);
-    // You can perform further actions here, such as API calls or dispatching events.
+  const handleSubscribePackage = (pkg) => { };
+
+  // Render the package feeds
+  const renderPackageFeeds = (packageId) => {
+    const pkg = packages.find((pkg) => pkg.id === packageId);
+
+    if (pkg) {
+      return (
+        <List
+          dataSource={pkg.feeds}
+          renderItem={(feed) => {
+            const { id, description } = feed;
+            return (
+              <List.Item
+                key={id}
+                actions={[
+                  <Button
+                    type="primary"
+                    icon={<DeleteOutlined />}
+                    onClick={() => handleRemoveFeed(packageId, id)}
+                  >
+                    Remove
+                  </Button>,
+                ]}
+              >
+                <List.Item.Meta title={description} />
+              </List.Item>
+            );
+          }}
+        />
+      );
+    }
+
+    return null;
   };
 
   return (
     <div style={{ padding: '16px' }}>
       <Row gutter={[16, 16]}>
-        <Col xs={24} sm={12} md={8}>
-          <Card title="Create Package" style={{ height: '100%' }}>
-            {/* Create Package UI */}
-            <Button type="primary" onClick={handleCreatePackage} style={{ marginBottom: '16px' }}>
-              <PlusOutlined /> Create New Package
-            </Button>
-            {selectedPackage && (
-              <>
-                <Divider />
-                {editingPackageName ? (
-                  <>
-                    <Input value={newPackageName} onChange={(e) => setNewPackageName(e.target.value)} style={{ marginBottom: '8px' }} />
-                    <Button type="primary" onClick={handleSavePackageName}>
-                      <CheckOutlined /> Save Name
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <h3>{selectedPackage.name}</h3>
-                    <Button onClick={handleEditPackageName}>
-                      <EditOutlined /> Edit Name
-                    </Button>
-                    <Button danger onClick={handleDeletePackage} style={{ marginLeft: '8px' }}>
-                      <DeleteOutlined /> Delete Package
-                    </Button>
-                  </>
-                )}
-                {selectedPackage.feeds.length > 0 && (
-                  <>
-                    <Divider />
-                    <h3>Feeds</h3>
-                    {selectedPackage.feeds.map((feed) => (
-                      <div key={feed.id}>
-                        <h4>{feed.title}</h4>
-                        <Button danger onClick={() => handleRemoveFeed(feed.id)} style={{ marginLeft: '8px' }}>
-                          <DeleteOutlined /> Remove
-                        </Button>
-                      </div>
-                    ))}
-                  </>
-                )}
-                {feeds.length > 0 && (
-                  <>
-                    <Divider />
-                    <h3>Add Feeds</h3>
-                    {feeds.map((feed) => (
-                      <div key={feed.id} style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
-                        <h4>{feed.title}</h4>
-                        <Button
-                          onClick={() => handleToggleFeedSelection(feed.id)}
-                          style={{
-                            background: selectedFeeds.some((f) => f.id === feed.id) ? 'green' : 'white',
-                            marginLeft: '8px',
-                          }}
-                        >
-                          {selectedFeeds.some((f) => f.id === feed.id) ? (
-                            <>
-                              <CheckOutlined /> Selected
-                            </>
-                          ) : (
-                            'Add'
-                          )}
-                        </Button>
-                      </div>
-                    ))}
-                    <Button type="primary" onClick={handleAddFeeds} style={{ marginTop: '8px' }}>
-                      <PlusOutlined /> Add Selected Feeds
-                    </Button>
-                  </>
-                )}
-              </>
+        <Col xs={24} sm={12} md={8} lg={8} xl={8}>
+          <h2>Create New Package</h2>
+          <Input
+            placeholder="Enter package name"
+            value={newPackageName}
+            onChange={(e) => setNewPackageName(e.target.value)}
+            style={{ marginBottom: '16px' }}
+          />
+          <Button type="primary" icon={<PlusOutlined />} onClick={handleCreatePackage}>
+            Create
+          </Button>
+          <Divider />
+          <h2>Available Feeds</h2>
+          <List
+            dataSource={feeds}
+            renderItem={(feed) => (
+              <List.Item
+                key={feed.id}
+                actions={[
+                  <Button
+                    type={selectedFeeds.includes(feed.id) ? 'default' : 'primary'}
+                    icon={<PlusOutlined />}
+                    onClick={() => handleToggleFeedSelection(feed.id)}
+                  >
+                    {selectedFeeds.includes(feed.id) ? 'Deselect Feed' : 'Select Feed'}
+                  </Button>,
+                ]}
+              >
+                <List.Item.Meta title={feed.description} />
+              </List.Item>
             )}
-          </Card>
+          />
+          <Button type="primary" onClick={() => handleAddFeeds(selectedFeeds)}>
+            <PlusOutlined /> Add Feeds
+          </Button>
         </Col>
-        <Col xs={24} sm={12} md={16}>
+
+        <Col xs={24} sm={12} md={16} lg={16} xl={16}s>
+          <h2>Packages</h2>
           <Row gutter={[16, 16]}>
             {packages.map((pkg) => (
-              <Col key={pkg.id} xs={24} sm={12} md={8}>
+              <Col xs={24} sm={12} md={8} lg={8} xl={8} key={pkg.id}>
                 <Card
-                  hoverable
-                  title={pkg.name}
-                  onClick={() => handleSelectPackage(pkg)}
-                  style={{ height: '100%' }}
-                  extra={
-                    <Button type="primary" onClick={() => handleSubscribePackage(pkg)}>
-                      <PlusOutlined /> Subscribe
-                    </Button>
-                  }
-                >
-                  {pkg.feeds.length > 0 ? (
-                    pkg.feeds.map((feed) => (
-                      <div key={feed.id}>
-                        <h4>{feed.title}</h4>
+                  title={
+                    pkg.editing ? (
+                      <Input
+                        defaultValue={pkg.name}
+                        onPressEnter={(e) => handleSavePackageName(pkg.id, e.target.value)}
+                        onBlur={(e) => handleSavePackageName(pkg.id, e.target.value)}
+                        autoFocus
+                        suffix={<CheckOutlined />}
+                        style={{ marginBottom: '8px' }}
+                      />
+                    ) : (
+                      <div>
+                        <span style={{ float: 'right' }}>
+                          <EditOutlined onClick={() => handleEditPackageName(pkg.id)} />
+                          <DeleteOutlined onClick={() => handleDeletePackage(pkg.id)} />
+                        </span>
+                        <span>{pkg.name}</span>
                       </div>
-                    ))
-                  ) : (
-                    <p>No feeds in this package.</p>
-                  )}
+                    )
+                  }
+                  onClick={() => handleSelectPackage(pkg)}
+                  className={selectedPackage && selectedPackage.id === pkg.id ? 'selected-package' : ''}
+                >
+                  {renderPackageFeeds(pkg.id)}
                 </Card>
               </Col>
             ))}

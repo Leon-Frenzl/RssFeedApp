@@ -18,7 +18,6 @@ function MyFeedsPage() {
 
     ipcRenderer.on('response-rssFeeds', (event, parsedFeeds) => {
       if (Array.isArray(parsedFeeds)) {
-        console.log(parsedFeeds);
         setFeeds(parsedFeeds);
       } else {
         setFeeds([]);

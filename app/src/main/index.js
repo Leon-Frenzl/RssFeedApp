@@ -5,7 +5,7 @@ import { parseRssFeeds_LastItem, parseRssFeedForItems } from './rssParser';
 import NodeCach from 'node-cache';
 import fs from 'fs';
 
-let mainWindow = null; // Declare mainWindow variable outside of createWindow function
+let mainWindow = null;
 let appUsageStartTime = null;
 let appUsageInterval = null;
 let appUsageTime = 0;
@@ -13,8 +13,9 @@ let appUsageTime = 0;
 const rssCache = new NodeCach({ stdTTL: 600 });
 const rssFeedUrlsFile = join(app.getPath('userData'), 'rssFeedUrls.json');
 const exampleFeedUrlsFile = join(app.getAppPath(), 'resources', 'exampleFeedUrls.json');
+const packagesFile = join(app.getPath('userData'), 'packages.json');
 
-function loadRssFeeds(file) {
+function loadFile(file) {
   try {
     if (!fs.existsSync(file)) {
       fs.writeFileSync(file, '[]', 'utf-8');
@@ -22,8 +23,16 @@ function loadRssFeeds(file) {
     const data = fs.readFileSync(file, 'utf-8');
     return JSON.parse(data) || [];
   } catch (error) {
-    console.error(`Error loading RssFeeds from ${file}: ${error}`);
+    console.error(`Error loading File from ${file}: ${error}`);
     return [];
+  }
+}
+
+function savePackages(file, packages) {
+  try {
+    fs.writeFileSync(file, JSON.stringify(packages), 'utf-8')
+  } catch (error) {
+    console.error(`Error saving Packages to ${file}: ${error}`)
   }
 }
 
@@ -39,7 +48,7 @@ function startAppUsageTimer() {
   appUsageStartTime = Date.now();
   appUsageInterval = setInterval(() => {
     appUsageTime = Math.floor((Date.now() - appUsageStartTime) / 1000);
-    mainWindow.webContents.send('app-usage-time', appUsageTime); // Send the app usage time to the renderer process
+    mainWindow.webContents.send('app-usage-time', appUsageTime);
   }, 1000);
 }
 
@@ -53,8 +62,9 @@ function stopAppUsageTimer() {
 }
 
 // Load Files for rssFeedUrls and exampleFeedUrls into a JSON Array
-let rssFeedUrls = loadRssFeeds(rssFeedUrlsFile);
-let exampleFeedUrls = loadRssFeeds(exampleFeedUrlsFile);
+let rssFeedUrls = loadFile(rssFeedUrlsFile);
+let exampleFeedUrls = loadFile(exampleFeedUrlsFile);
+let packages = loadFile(packagesFile);
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -110,7 +120,7 @@ ipcMain.on('read-rssFeeds', async (event) => {
     const parsedFeeds = await parseRssFeeds_LastItem(rssFeedUrls);
     event.sender.send('response-rssFeeds', parsedFeeds);
   } catch (error) {
-    event.reply('response-example-feeds', { error: error.message });
+    event.reply('response-rssFeeds', { error: error.message });
   }
 });
 
@@ -201,7 +211,7 @@ ipcMain.on('read-example-feeds', async (event) => {
   }
 });
 
-function fetchRssFeeds(){
+function fetchRssFeeds() {
   console.log("Update not implemented, right now")
 }
 
@@ -246,18 +256,135 @@ ipcMain.on('stop-app-usage-timer', (event) => {
   event.reply('app-usage-time', usageTime);
 });
 
-ipcMain.on('create-package', (event, createGroup) => {
-  event.reply('response-create-package', 'Not Implemented');
-});
-
 ipcMain.on('subscribe-to-package', (event, packageID) => {
-  event.reply('response-subscribe-package', 'Not Implemented');
+  const packageIndex = packages.findIndex((pkg) => pkg.id === packageID);
+  if (packageIndex !== -1) {
+    const pkg = packages[packageIndex];
+    const packageFeeds = pkg.feeds;
+
+    for (const feed of packageFeeds) {
+      const existingFeedIndex = exampleFeedUrls.findIndex((f) => f.url === feed.url);
+
+      if (existingFeedIndex !== -1) {
+        exampleFeedUrls[existingFeedIndex].subscribed = true;
+        saveRssFeedUrls(exampleFeedUrlsFile, exampleFeedUrls);
+      }
+
+      const existingUserFeed = rssFeedUrls.find((f) => f.url === feed.url);
+
+      if (!existingUserFeed) {
+        const newUserFeed = {
+          id: "r" + (rssFeedUrls.length + 1),
+          url: feed.url,
+          description: feed.description,
+          topic: feed.topic,
+          subscribed: true,
+        };
+        rssFeedUrls.push(newUserFeed);
+        saveRssFeedUrls(rssFeedUrlsFile, rssFeedUrls);
+      }
+    }
+
+    const updatedPackage = { ...pkg, subscribed: true };
+    packages[packageIndex] = updatedPackage;
+    savePackages(packagesFile, packages);
+
+    event.reply('response-subscribe-package', updatedPackage);
+  } else {
+    event.reply('response-subscribe-package', { error: 'Package not found' });
+  }
 });
 
-ipcMain.on('update-package', (event) => {
-  event.reply('response-update-package', 'Not Implemented');
+ipcMain.on('unsubscribe-from-package', (event, packageID) => {
+  const packageIndex = packages.findIndex((pkg) => pkg.id === packageID);
+  if (packageIndex !== -1) {
+    const pkg = packages[packageIndex];
+    const packageFeeds = pkg.feeds;
+
+    for (const feed of packageFeeds) {
+      const existingFeedIndex = exampleFeedUrls.findIndex((f) => f.url === feed.url);
+
+      if (existingFeedIndex !== -1) {
+        exampleFeedUrls[existingFeedIndex].subscribed = false;
+        saveRssFeedUrls(exampleFeedUrlsFile, exampleFeedUrls);
+      }
+
+      const existingUserFeedIndex = rssFeedUrls.findIndex((f) => f.url === feed.url);
+
+      if (existingUserFeedIndex !== -1) {
+        rssFeedUrls.splice(existingUserFeedIndex, 1);
+        saveRssFeedUrls(rssFeedUrlsFile, rssFeedUrls);
+      }
+    }
+
+    const updatedPackage = { ...pkg, subscribed: false };
+    packages[packageIndex] = updatedPackage;
+    savePackages(packagesFile, packages);
+
+    event.reply('response-unsubscribe-package', updatedPackage);
+  } else {
+    event.reply('response-unsubscribe-package', { error: 'Package not found' });
+  }
 });
 
-ipcMain.on('delete-package', (event) => {
-  event.reply('response-delete-package', 'Not Implemented');
+
+ipcMain.on('update-package', (event, packageID) => {
+});
+
+ipcMain.on('delete-package', (event, id) => {
+  const packageIndex = packages.findIndex((pkg) => pkg.id === id);
+  if (packageIndex !== -1) {
+    const deletedPackage = packages[packageIndex];
+    packages.splice(packageIndex, 1);
+    savePackages(packagesFile, packages);
+    event.reply('response-delete-package', deletedPackage);
+  } else {
+    event.reply('response-delete-package', { error: 'Package not found' });
+  }
+});
+
+ipcMain.on('read-packages', async (event) => {
+  try {
+    event.sender.send('response-read-packages', packages);
+  } catch (error) {
+    event.reply('response-read-packages', { error: error.message });
+  }
+});
+
+ipcMain.on('add-feeds-to-package', (event, id, feedIds) => {
+  const packageIndex = packages.findIndex((pkg) => pkg.id === id);
+  if (packageIndex !== -1) {
+    const packageFeeds = packages[packageIndex].feeds;
+
+    for (const feedId of feedIds) {
+      const feed = exampleFeedUrls.find((feed) => feed.id === feedId);
+      if (feed && !packageFeeds.some((pkgFeed) => pkgFeed.id === feed.id)) {
+        packageFeeds.push(feed);
+      }
+    }
+
+    savePackages(packagesFile, packages);
+    event.reply('response-add-feeds-to-package', id, packageFeeds);
+  }
+});
+
+ipcMain.on('remove-feed-from-package', (event, id, feedId) => {
+  const packageIndex = packages.findIndex((pkg) => pkg.id === id);
+  if (packageIndex !== -1) {
+    const packageFeeds = packages[packageIndex].feeds;
+    const feedIndex = packageFeeds.findIndex((feed) => feed.id === feedId);
+    if (feedIndex !== -1) {
+      packageFeeds.splice(feedIndex, 1);
+    }
+    savePackages(packagesFile, packages);
+    event.reply('response-remove-feed-from-package', id, packageFeeds);
+  }
+});
+
+
+
+ipcMain.on('create-package', (event, newPackage) => {
+  packages.push(newPackage);
+  savePackages(packagesFile, packages);
+  event.reply('response-create-package', newPackage);
 });
