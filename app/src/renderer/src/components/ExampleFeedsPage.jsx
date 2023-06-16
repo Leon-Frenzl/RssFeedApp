@@ -57,19 +57,19 @@ function ExampleFeedsPage() {
     return colProps;
   };
 
-  const handleSubscribe = (rssFeedUrl, description) => {
+  const handleSubscribe = (rssFeedUrl, description, topic) => {
     const ipcRenderer = window.electron.ipcRenderer;
     setExampleFeeds((prevExampleFeeds) =>
       prevExampleFeeds.map((feed) => {
         if (feed.url === rssFeedUrl) {
-          return { ...feed, subscribed: true, description };
+          return { ...feed, subscribed: true, description, topic };
         }
         return feed;
       })
     );
 
-    // Send the IPC message to subscribe to the feed
-    ipcRenderer.send('subscribe-to-feed', rssFeedUrl);
+    // Send the IPC message to subscribe to the feed with the topic
+    ipcRenderer.send('subscribe-to-feed', rssFeedUrl, description, topic);
   };
 
   const handleUnsubscribe = (rssFeedUrl) => {
@@ -123,7 +123,7 @@ function ExampleFeedsPage() {
                       author={feed.author}
                       description={feed.description}
                       rssFeedUrl={feed.url}
-                      topic={feed.topic}
+                      topic={group.topic}
                       id={feed.id}
                       subscribed={feed.subscribed}
                       onSubscribe={handleSubscribe}
@@ -141,7 +141,7 @@ function ExampleFeedsPage() {
       ))}
       <Modal
         title={modalTitle}
-        open={modalVisible}
+        visible={modalVisible}
         onOk={closeModal}
         onCancel={closeModal}
         footer={null}
