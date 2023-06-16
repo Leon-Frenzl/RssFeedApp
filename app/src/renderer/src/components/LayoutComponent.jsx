@@ -11,7 +11,7 @@ import ItemPage from './ItemPage';
 const { Content: AntContent } = Layout;
 
 function LayoutComponent() {
-  const [appUsageTime, setAppUsageTime] = useState(0);
+  const [usageTime, setAppUsageTime] = useState(0);
 
   useEffect(() => {
     const ipcRenderer = window.electron.ipcRenderer;
@@ -37,7 +37,7 @@ function LayoutComponent() {
               <Route path="/" element={<ExampleFeedsPage />} />
               <Route path="/my-feeds" element={<MyFeedsPage />} />
               <Route path="/packages" element={<PackagePage />} />
-              <Route path="/dashboard" element={<DashboardPage appUsageTime={appUsageTime}/>} />
+              <Route path="/dashboard" element={<DashboardPage appUsageTime={usageTime}/>} />
               <Route path="/items/:id" element={<ItemPage />} />
             </Routes>
           </AntContent>

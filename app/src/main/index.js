@@ -5,6 +5,7 @@ import { parseRssFeeds_LastItem, parseRssFeedForItems } from './rssParser';
 import NodeCach from 'node-cache';
 import fs from 'fs';
 
+let mainWindow = null; // Declare mainWindow variable outside of createWindow function
 let appUsageStartTime = null;
 let appUsageInterval = null;
 let appUsageTime = 0;
@@ -51,12 +52,12 @@ function stopAppUsageTimer() {
   return usageTime;
 }
 
-//Load Files for rssFeedUrls and exampleFeedUrls into a JSON Array
+// Load Files for rssFeedUrls and exampleFeedUrls into a JSON Array
 let rssFeedUrls = loadRssFeeds(rssFeedUrlsFile);
-let exampleFeedUrls = loadRssFeeds(exampleFeedUrlsFile);    
+let exampleFeedUrls = loadRssFeeds(exampleFeedUrlsFile);
 
 function createWindow() {
-  const mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 900,
     height: 670,
     show: false,
@@ -201,7 +202,7 @@ ipcMain.on('read-example-feeds', async (event) => {
 });
 
 function fetchRssFeeds(){
-  console.log("Update not implemented, rigth now")
+  console.log("Update not implemented, right now")
 }
 
 function updateRssFeeds() {
@@ -218,7 +219,7 @@ ipcMain.on('render-items', async (event, id) => {
   if (feed) {
     try {
       const items = await parseRssFeedForItems(feed.url);
-      event.reply('response-render-items', items );
+      event.reply('response-render-items', items);
     } catch (error) {
       event.reply('response-render-items', { error: error.message });
     }
@@ -227,7 +228,7 @@ ipcMain.on('render-items', async (event, id) => {
     if (rssFeed) {
       try {
         const items = await parseRssFeedForItems(rssFeed.url);
-        event.reply('response-render-items',  items );
+        event.reply('response-render-items', items);
       } catch (error) {
         event.reply('response-render-items', { error: error.message });
       }
@@ -236,29 +237,27 @@ ipcMain.on('render-items', async (event, id) => {
     }
   }
 });
+ipcMain.on('start-app-usage-timer', () => {
+  startAppUsageTimer();
+});
 
-ipcMain.on('startAppUsageTimer', () => {
-  if(!appUsageStartTime){startAppUsageTimer();}
-})
-
-ipcMain.on('stopAppUsageTimer', (event) => {
+ipcMain.on('stop-app-usage-timer', (event) => {
   const usageTime = stopAppUsageTimer();
-  event.reply('appUsageTime', usageTime); 
-})
-
+  event.reply('app-usage-time', usageTime);
+});
 
 ipcMain.on('create-package', (event, createGroup) => {
   event.reply('response-create-package', 'Not Implemented');
 });
 
-ipcMain.on('subscribe-to-pacakge', (event, packageID) => {
-  event.reply('response-subsribe-package', 'Not Implemented')
-})
+ipcMain.on('subscribe-to-package', (event, packageID) => {
+  event.reply('response-subscribe-package', 'Not Implemented');
+});
 
 ipcMain.on('update-package', (event) => {
   event.reply('response-update-package', 'Not Implemented');
 });
 
 ipcMain.on('delete-package', (event) => {
-  event.reply('response-delet-package', 'Not Implemented');
+  event.reply('response-delete-package', 'Not Implemented');
 });
