@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Row, Col, Divider, Button, Card, Input, message, List } from 'antd';
 import {
   PlusOutlined,
@@ -17,7 +17,6 @@ function PackagePage() {
   const [selectedPackage, setSelectedPackage] = useState(null);
 
   const ipcRenderer = window.electron.ipcRenderer;
-
   const fetchFeeds = async () => {
     ipcRenderer.send('read-example-feeds');
   };
@@ -26,25 +25,9 @@ function PackagePage() {
     ipcRenderer.send('read-packages');
   };
 
+  // Fetch feeds and packages
   useEffect(() => {
-    const ipcRenderer = window.electron.ipcRenderer;
-  
-    const fetchFeeds = async () => {
-      ipcRenderer.send('read-example-feeds');
-    };
-  
-    const fetchPackages = async () => {
-      ipcRenderer.send('read-packages');
-    };
-  
-    const fetchFeedsWithDelay = () => {
-      setTimeout(fetchFeeds, 10000); // Delay of 1 second
-    };
-  
-    const fetchPackagesWithDelay = () => {
-      setTimeout(fetchPackages, 10000); // Delay of 1 second
-    };
-  
+    
     ipcRenderer.on('response-read-packages', (event, loadedPackages) => {
       if (Array.isArray(loadedPackages)) {
         setPackages([...loadedPackages]);
@@ -52,7 +35,7 @@ function PackagePage() {
         setPackages([]);
       }
     });
-  
+
     ipcRenderer.on('response-example-feeds', (event, parsedFeeds) => {
       if (Array.isArray(parsedFeeds)) {
         setFeeds(parsedFeeds);
@@ -60,7 +43,7 @@ function PackagePage() {
         setFeeds([]);
       }
     });
-  
+
     ipcRenderer.on('response-add-feeds-to-package', (event, packageId, updatedFeeds) => {
       const updatedPackages = packages.map((pkg) => {
         if (pkg.id === packageId) {
@@ -70,7 +53,7 @@ function PackagePage() {
       });
       setPackages(updatedPackages);
     });
-  
+
     ipcRenderer.on('response-remove-feed-from-package', (event, packageId, updatedFeeds) => {
       const updatedPackages = packages.map((pkg) => {
         if (pkg.id === packageId) {
@@ -80,10 +63,10 @@ function PackagePage() {
       });
       setPackages(updatedPackages);
     });
-  
-    fetchFeedsWithDelay();
-    fetchPackagesWithDelay();
-  
+
+    fetchFeeds();
+    fetchPackages();
+
     return () => {
       ipcRenderer.removeAllListeners('response-read-packages');
       ipcRenderer.removeAllListeners('response-example-feeds');
@@ -92,6 +75,15 @@ function PackagePage() {
       ipcRenderer.removeAllListeners('response-remove-feed-from-package');
     };
   }, []);
+
+  // Memoized values
+  const selectedPackageFeeds = useMemo(() => {
+    if (selectedPackage) {
+      const pkg = packages.find((pkg) => pkg.id === selectedPackage.id);
+      return pkg ? pkg.feeds : [];
+    }
+    return [];
+  }, [selectedPackage, packages]);
 
   // Handle creating a new package
   const handleCreatePackage = () => {
@@ -131,14 +123,46 @@ function PackagePage() {
   const handleAddFeeds = (feeds) => {
     if (selectedPackage) {
       const updatedPackage = { ...selectedPackage, feeds };
-      ipcRenderer.send('add-feeds-to-package', selectedPackage.id, feeds);
-      setSelectedPackage(updatedPackage);
+      setSelectedPackage(updatedPackage); // Update the selectedPackage state immediately
+  
+      const packageId = selectedPackage.id;
+      ipcRenderer.send('add-feeds-to-package', packageId, feeds);
+  
+      ipcRenderer.once('response-add-feeds-to-package', (event, updatedFeeds) => {
+        const updatedPackages = packages.map((pkg) => {
+          if (pkg.id === packageId) {
+            return { ...pkg, feeds: updatedFeeds };
+          }
+          return pkg;
+        });
+  
+        setPackages(updatedPackages);
+        fetchPackages();
+      });
     }
   };
 
   // Handle removing a feed from the selected package
   const handleRemoveFeed = (packageId, feedId) => {
+    const updatedPackage = {
+      ...selectedPackage,
+      feeds: selectedPackage.feeds.filter((feed) => feed.id !== feedId),
+    };
+    setSelectedPackage(updatedPackage); // Update the selectedPackage state immediately
+  
     ipcRenderer.send('remove-feed-from-package', packageId, feedId);
+  
+    ipcRenderer.once('response-remove-feed-from-package', (event, updatedFeeds) => {
+      const updatedPackages = packages.map((pkg) => {
+        if (pkg.id === packageId) {
+          return { ...pkg, feeds: updatedFeeds };
+        }
+        return pkg;
+      });
+  
+      setPackages(updatedPackages);
+      fetchPackages();
+    });
   };
 
   // Handle editing the package name
@@ -187,13 +211,12 @@ function PackagePage() {
   };
 
   // Handle subscribing to a package
-  const handleSubscribePackage = (pkg) => { };
+  const handleSubscribePackage = (pkg) => {};
 
   // Render the package feeds
   const renderPackageFeeds = (packageId) => {
     const pkg = packages.find((pkg) => pkg.id === packageId);
-
-    if (pkg) {
+    if (pkg && pkg.feeds.length > 0) {
       return (
         <List
           dataSource={pkg.feeds}
@@ -219,7 +242,7 @@ function PackagePage() {
         />
       );
     }
-
+  
     return null;
   };
 
