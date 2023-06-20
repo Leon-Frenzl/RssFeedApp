@@ -17,7 +17,6 @@ function Sidebar() {
     { key: '/', icon: <AppstoreOutlined />, label: 'Example Feeds' },
     { key: '/my-feeds', icon: <MailOutlined />, label: 'My Feeds' },
     { key: '/packages', icon: <BookOutlined />, label: 'Packages' },
-    { key: '/dashboard', icon: <DashboardOutlined />, label: 'Dashboard' },
   ];
 
   return (
@@ -26,13 +25,12 @@ function Sidebar() {
         mode="vertical"
         theme="light"
         selectedKeys={[location.pathname]}
-      >
-        {menuItems.map((item) => (
-          <Menu.Item key={item.key} icon={item.icon}>
-            <Link to={item.key}>{item.label}</Link>
-          </Menu.Item>
-        ))}
-      </Menu>
+        items={menuItems.map((item) => ({
+          key: item.key,
+          icon: item.icon,
+          label: <Link to={item.key}>{item.label}</Link>,
+        }))}
+      />
     </Sider>
   );
 }

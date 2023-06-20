@@ -23,6 +23,7 @@ function ItemPage() {
       if (items.error) {
         showModal('Error', items.error);
       } else {
+        console.log(items);
         setFeedItems(items);
       }
     });
@@ -50,33 +51,40 @@ function ItemPage() {
     if (Array.isArray(feedItems) && feedItems.length > 0) {
       const itemsPerRow = 4;
       const rows = Math.ceil(feedItems.length / itemsPerRow);
-
+  
       const itemRows = [];
-
+  
       for (let i = 0; i < rows; i++) {
         const start = i * itemsPerRow;
         const end = start + itemsPerRow;
         const rowItems = feedItems.slice(start, end);
-
+  
         const itemRow = (
-          <Row gutter={[16, 16]} key={i}>
-            {rowItems.map((feed, index) => (
-              <Col key={index} span={24 / itemsPerRow}>
-                <ItemCard
-                  title={feed.itemTitle}
-                  link={feed.link}
-                  pubDate={feed.pubDate}
-                  content={feed.images[0]}
-                  description={feed.contentSnippet}
-                />
-              </Col>
-            ))}
+          <Row gutter={[16, 16]} key={i} justify="space-between" style={{ flexWrap: 'wrap' }}>
+            {rowItems.map((feed, index) => {
+              const isLastRow = i === rows - 1;
+              const columnSpan = isLastRow && feedItems.length % itemsPerRow !== 0 ? 24 / (feedItems.length % itemsPerRow) : 24 / itemsPerRow;
+  
+              return (
+                <Col key={index} span={columnSpan} style={{ marginBottom: '20px' }}>
+                  <ItemCard
+                    id={feed.id}
+                    title={feed.itemTitle}
+                    link={feed.link}
+                    pubDate={feed.pubDate}
+                    content={feed.images[0]}
+                    description={feed.contentSnippet}
+                    videos={feed.videos}
+                  />
+                </Col>
+              );
+            })}
           </Row>
         );
-
+  
         itemRows.push(itemRow);
       }
-
+  
       return itemRows;
     } else {
       return <p>No items found.</p>;
@@ -95,17 +103,18 @@ function ItemPage() {
         </Button>
         <h1 style={{ margin: '0 16px' }}>{feedItems.length > 0 ? feedItems[0].title : ''}</h1>
       </div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
-        {renderFeedItems()}
-      </div>
+      {renderFeedItems()}
       <Modal
         title={modalTitle}
-        visible={modalVisible}
-        onOk={closeModal}
+        open={modalVisible}
         onCancel={closeModal}
-        footer={null}
+        footer={[
+          <Button key="close" onClick={closeModal}>
+            Close
+          </Button>,
+        ]}
       >
-        <p>{modalContent}</p>
+        {modalContent && <p>{modalContent}</p>}
       </Modal>
     </div>
   );

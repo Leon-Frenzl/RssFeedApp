@@ -1,10 +1,9 @@
 {
-  "name": "app",
+  "name": "news",
   "version": "1.0.0",
-  "description": "An Electron application with React",
+  "description": "Rss App",
   "main": "./out/main/index.js",
-  "author": "example.com",
-  "homepage": "https://www.electronjs.org",
+  "author": "Leon Frenzl",
   "scripts": {
     "format": "prettier --write .",
     "lint": "eslint . --ext .js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix",

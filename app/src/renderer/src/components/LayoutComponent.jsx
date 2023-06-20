@@ -5,27 +5,11 @@ import Sidebar from './Sidebar';
 import ExampleFeedsPage from './ExampleFeedsPage';
 import MyFeedsPage from './MyFeedsPage';
 import PackagePage from './PackagePage';
-import DashboardPage from './DashboardPage';
 import ItemPage from './ItemPage';
 
 const { Content: AntContent } = Layout;
 
 function LayoutComponent() {
-  const [usageTime, setAppUsageTime] = useState(0);
-
-  useEffect(() => {
-    const ipcRenderer = window.electron.ipcRenderer;
-    ipcRenderer.send('start-app-usage-timer'); // Send command to start the app usage timer
-
-    ipcRenderer.on('app-usage-time', (event, usageTime) => {
-      setAppUsageTime(usageTime);
-    });
-
-    return () => {
-      ipcRenderer.send('stop-app-usage-timer'); // Send command to stop the app usage timer
-      ipcRenderer.removeAllListeners('app-usage-time');
-    };
-  }, []);
 
   return (
     <Router>
@@ -37,7 +21,6 @@ function LayoutComponent() {
               <Route path="/" element={<ExampleFeedsPage />} />
               <Route path="/my-feeds" element={<MyFeedsPage />} />
               <Route path="/packages" element={<PackagePage />} />
-              <Route path="/dashboard" element={<DashboardPage appUsageTime={usageTime}/>} />
               <Route path="/items/:id" element={<ItemPage />} />
             </Routes>
           </AntContent>

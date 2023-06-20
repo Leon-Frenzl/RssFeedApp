@@ -27,7 +27,6 @@ function PackagePage() {
 
   // Fetch feeds and packages
   useEffect(() => {
-    
     ipcRenderer.on('response-read-packages', (event, loadedPackages) => {
       if (Array.isArray(loadedPackages)) {
         setPackages([...loadedPackages]);
@@ -124,10 +123,10 @@ function PackagePage() {
     if (selectedPackage) {
       const updatedPackage = { ...selectedPackage, feeds };
       setSelectedPackage(updatedPackage); // Update the selectedPackage state immediately
-  
+
       const packageId = selectedPackage.id;
       ipcRenderer.send('add-feeds-to-package', packageId, feeds);
-  
+
       ipcRenderer.once('response-add-feeds-to-package', (event, updatedFeeds) => {
         const updatedPackages = packages.map((pkg) => {
           if (pkg.id === packageId) {
@@ -135,7 +134,7 @@ function PackagePage() {
           }
           return pkg;
         });
-  
+
         setPackages(updatedPackages);
         fetchPackages();
       });
@@ -149,9 +148,9 @@ function PackagePage() {
       feeds: selectedPackage.feeds.filter((feed) => feed.id !== feedId),
     };
     setSelectedPackage(updatedPackage); // Update the selectedPackage state immediately
-  
+
     ipcRenderer.send('remove-feed-from-package', packageId, feedId);
-  
+
     ipcRenderer.once('response-remove-feed-from-package', (event, updatedFeeds) => {
       const updatedPackages = packages.map((pkg) => {
         if (pkg.id === packageId) {
@@ -159,7 +158,7 @@ function PackagePage() {
         }
         return pkg;
       });
-  
+
       setPackages(updatedPackages);
       fetchPackages();
     });
@@ -230,6 +229,7 @@ function PackagePage() {
                     type="primary"
                     icon={<DeleteOutlined />}
                     onClick={() => handleRemoveFeed(packageId, id)}
+                    block // Added block property for responsiveness
                   >
                     Remove
                   </Button>,
@@ -242,7 +242,7 @@ function PackagePage() {
         />
       );
     }
-  
+
     return null;
   };
 
@@ -286,7 +286,7 @@ function PackagePage() {
           </Button>
         </Col>
 
-        <Col xs={24} sm={12} md={16} lg={16} xl={16}s>
+        <Col xs={24} sm={12} md={16} lg={16} xl={16}>
           <h2>Packages</h2>
           <Row gutter={[16, 16]}>
             {packages.map((pkg) => (

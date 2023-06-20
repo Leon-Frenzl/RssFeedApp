@@ -76,7 +76,7 @@ function ExampleFeedCard({
         />
       </div>
       <Card.Meta title={title} description={author} />
-      <p>{getDescriptionText()}</p>
+      <p style={{ fontSize: '14px' }}>{getDescriptionText()}</p>
       {description && description.length > 100 && (
         <Button type="link" onClick={toggleExpand}>
           {expanded ? 'Read Less' : 'Read More'}
@@ -94,6 +94,31 @@ function ExampleFeedCard({
           </Button>
         </div>
       </div>
+
+      {/* Responsive Styles */}
+      <style>
+        {`
+          @media only screen and (max-width: 768px) {
+            p {
+              font-size: 12px;
+            }
+
+            .ant-btn {
+              font-size: 10px;
+            }
+          }
+        
+          @media only screen and (max-width: 480px) {
+            p {
+              font-size: 10px;
+            }
+
+            .ant-btn {
+              font-size: 8px;
+            }
+          }
+        `}
+      </style>
     </Card>
   );
 }
